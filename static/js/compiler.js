@@ -394,9 +394,9 @@ class CompilerVisualizer {
     
     renderAST(ast) {
         this.visualizationContent.innerHTML = `
-            <div class="flex flex-col gap-4">
+            <div class="flex flex-col gap-2 h-full">
                 <h3 class="text-lg font-bold text-zinc-100">Abstract Syntax Tree</h3>
-                <div class="rounded-lg border border-white/10 p-4 bg-gradient-to-br from-slate-900/50 to-slate-800/30" style="height: 80vh; min-height: 600px;">
+                <div class="rounded-lg border border-white/10 p-2 bg-gradient-to-br from-slate-900/50 to-slate-800/30 flex-1" style="min-height: 90vh;">
                     <div id="d3TreeContainer" class="w-full h-full"></div>
                 </div>
             </div>
@@ -413,9 +413,9 @@ class CompilerVisualizer {
         const isMobile = window.innerWidth < 768;
         const isSmallMobile = window.innerWidth < 480;
         
-        // Responsive dimensions - made much larger for all devices
-        const baseWidth = isSmallMobile ? 800 : isMobile ? 1200 : 1400;
-        const baseHeight = isSmallMobile ? 600 : isMobile ? 800 : 900;
+        // Responsive dimensions - extremely large for all devices
+        const baseWidth = isSmallMobile ? 1200 : isMobile ? 1800 : 2400;
+        const baseHeight = isSmallMobile ? 800 : isMobile ? 1200 : 1600;
         
         const width = Math.max(containerRect.width || baseWidth, baseWidth);
         const height = Math.max(containerRect.height || baseHeight, baseHeight);
@@ -424,8 +424,8 @@ class CompilerVisualizer {
         const nodeCount = this.countNodes(astData);
         const treeDepth = this.getTreeDepth(astData);
         
-        const nodeSpacing = isSmallMobile ? 150 : isMobile ? 180 : 220;
-        const levelSpacing = isSmallMobile ? 120 : isMobile ? 140 : 160;
+        const nodeSpacing = isSmallMobile ? 200 : isMobile ? 250 : 300;
+        const levelSpacing = isSmallMobile ? 150 : isMobile ? 180 : 220;
         
         const dynamicWidth = Math.max(width, nodeCount * nodeSpacing);
         const dynamicHeight = Math.max(height, treeDepth * levelSpacing);
@@ -515,9 +515,9 @@ class CompilerVisualizer {
             .attr('transform', d => `translate(${d.x}, ${d.y})`)
             .style('opacity', 0);
         
-        // Mobile-responsive node dimensions - made even larger
-        const nodeHeight = isSmallMobile ? 40 : isMobile ? 44 : 48;
-        const borderRadius = isSmallMobile ? 8 : 10;
+        // Mobile-responsive node dimensions - extremely large
+        const nodeHeight = isSmallMobile ? 50 : isMobile ? 55 : 60;
+        const borderRadius = isSmallMobile ? 10 : 12;
         
         // Add node backgrounds
         nodes.append('rect')
@@ -532,8 +532,8 @@ class CompilerVisualizer {
             .style('stroke-width', isSmallMobile ? 1 : 1.5)
             .style('filter', 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))');
         
-        // Mobile-responsive text - increased font size more
-        const fontSize = isSmallMobile ? '13px' : isMobile ? '14px' : '16px';
+        // Mobile-responsive text - very large font
+        const fontSize = isSmallMobile ? '16px' : isMobile ? '18px' : '20px';
         
         nodes.append('text')
             .attr('dy', 3)
@@ -579,10 +579,10 @@ class CompilerVisualizer {
     
     getNodeWidth(node, isMobile = false, isSmallMobile = false) {
         const text = this.getNodeText(node, isMobile, isSmallMobile);
-        const charWidth = isSmallMobile ? 9 : isMobile ? 10 : 11;
-        const padding = isSmallMobile ? 20 : isMobile ? 22 : 24;
-        const minWidth = isSmallMobile ? 90 : isMobile ? 100 : 110;
-        const maxWidth = isSmallMobile ? 180 : isMobile ? 200 : 240;
+        const charWidth = isSmallMobile ? 12 : isMobile ? 14 : 16;
+        const padding = isSmallMobile ? 30 : isMobile ? 35 : 40;
+        const minWidth = isSmallMobile ? 120 : isMobile ? 140 : 160;
+        const maxWidth = isSmallMobile ? 250 : isMobile ? 300 : 350;
         return Math.max(minWidth, Math.min(maxWidth, text.length * charWidth + padding));
     }
     
