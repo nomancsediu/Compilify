@@ -109,9 +109,6 @@ class CompilerVisualizer {
                 case 'codegen':
                     await this.showCodeGeneration(code);
                     break;
-                case 'output':
-                    await this.showOutput(code);
-                    break;
             }
         } catch (error) {
             this.showError(error.message);
