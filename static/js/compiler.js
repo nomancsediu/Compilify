@@ -914,40 +914,86 @@ class CompilerVisualizer {
     }
     
     renderSemanticAnalysis(data) {
+        const symbolCount = Object.keys(data.symbol_table.symbols).length;
+        const hasErrors = data.errors && data.errors.length > 0;
+        const hasWarnings = data.warnings && data.warnings.length > 0;
+        
         this.visualizationContent.innerHTML = `
             <div class="flex flex-col gap-4">
-                <h3 class="text-lg font-bold text-zinc-100">Semantic Analysis</h3>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div id="symbolTable" class="rounded-lg border border-white/10 p-4">
-                        <h4 class="font-bold text-zinc-200 mb-2">Symbol Table</h4>
-                        <div class="font-mono text-sm text-zinc-300" id="symbolEntries">
-                            ${Object.entries(data.symbol_table.symbols).map(([name, info], index) => 
-                                `<div id="symbol-${index}" class="py-1 px-2 rounded bg-blue-500/10 mb-1">${name}: ${info.type}</div>`
-                            ).join('')}
-                        </div>
+                <div class="flex items-center justify-between">
+                    <h3 class="text-lg font-bold text-zinc-100">Semantic Analysis</h3>
+                    <div class="flex items-center gap-2 text-sm">
+                        <span class="px-2 py-1 rounded bg-blue-500/20 text-blue-300">${symbolCount} Variables</span>
+                        ${hasErrors ? `<span class="px-2 py-1 rounded bg-red-500/20 text-red-300">${data.errors.length} Errors</span>` : ''}
+                        ${hasWarnings ? `<span class="px-2 py-1 rounded bg-yellow-500/20 text-yellow-300">${data.warnings.length} Warnings</span>` : ''}
                     </div>
+                </div>
+                
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                    <div id="symbolTable" class="rounded-lg border border-white/10 p-4 bg-gradient-to-br from-blue-900/20 to-blue-800/10">
+                        <h4 class="font-bold text-blue-200 mb-3">Symbol Table</h4>
+                        ${symbolCount > 0 ? `
+                            <div class="space-y-2" id="symbolEntries">
+                                ${Object.entries(data.symbol_table.symbols).map(([name, info], index) => `
+                                    <div id="symbol-${index}" class="flex items-center justify-between p-2 rounded bg-surface-dark border border-blue-500/20">
+                                        <div class="flex items-center gap-2">
+                                            <span class="w-2 h-2 rounded-full ${info.used ? 'bg-green-400' : 'bg-gray-500'}"></span>
+                                            <span class="font-mono text-blue-300 font-semibold">${name}</span>
+                                        </div>
+                                        <div class="flex items-center gap-2 text-xs">
+                                            <span class="px-2 py-1 rounded bg-cyan-500/20 text-cyan-300">${info.type}</span>
+                                            ${info.value !== null && info.value !== undefined ? 
+                                                `<span class="px-2 py-1 rounded bg-green-500/20 text-green-300">${info.value}</span>` : 
+                                                `<span class="px-2 py-1 rounded bg-gray-500/20 text-gray-400">uninitialized</span>`
+                                            }
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        ` : `
+                            <div class="text-center py-8 text-gray-400">
+                                No variables declared
+                            </div>
+                        `}
+                    </div>
+                    
                     <div id="analysisResults" class="rounded-lg border border-white/10 p-4">
-                        <h4 class="font-bold text-zinc-200 mb-2">Analysis Results</h4>
-                        <div id="resultContent">
-                            ${data.errors.length > 0 ? `
-                                <div class="text-red-300 mb-2">
-                                    <strong>Errors:</strong>
-                                    ${data.errors.map((err, index) => `<div id="error-${index}" class="py-1">• ${err}</div>`).join('')}
+                        <h4 class="font-bold text-zinc-200 mb-3">Analysis Results</h4>
+                        <div id="resultContent" class="space-y-3">
+                            ${hasErrors ? `
+                                <div class="bg-red-900/20 border border-red-500/30 rounded-lg p-3">
+                                    <strong class="text-red-300">Errors (${data.errors.length})</strong>
+                                    <div class="space-y-1 mt-2">
+                                        ${data.errors.map((err, index) => `
+                                            <div id="error-${index}" class="text-sm text-red-200">• ${err}</div>
+                                        `).join('')}
+                                    </div>
                                 </div>
                             ` : ''}
-                            ${data.warnings.length > 0 ? `
-                                <div class="text-yellow-300">
-                                    <strong>Warnings:</strong>
-                                    ${data.warnings.map((warn, index) => `<div id="warning-${index}" class="py-1">• ${warn}</div>`).join('')}
+                            
+                            ${hasWarnings ? `
+                                <div class="bg-yellow-900/20 border border-yellow-500/30 rounded-lg p-3">
+                                    <strong class="text-yellow-300">Warnings (${data.warnings.length})</strong>
+                                    <div class="space-y-1 mt-2">
+                                        ${data.warnings.map((warn, index) => `
+                                            <div id="warning-${index}" class="text-sm text-yellow-200">• ${warn}</div>
+                                        `).join('')}
+                                    </div>
                                 </div>
-                            ` : '<div id="success" class="text-green-300">✓ No issues found</div>'}
+                            ` : ''}
+                            
+                            ${!hasErrors && !hasWarnings ? `
+                                <div id="success" class="bg-green-900/20 border border-green-500/30 rounded-lg p-4 text-center">
+                                    <div class="text-green-300 font-semibold">✓ Semantic analysis passed</div>
+                                    <div class="text-green-200 text-sm mt-1">No errors or warnings found</div>
+                                </div>
+                            ` : ''}
                         </div>
                     </div>
                 </div>
             </div>
         `;
         
-        // Animate semantic analysis
         this.animateSemanticAnalysis(data);
     }
     
@@ -1053,22 +1099,68 @@ class CompilerVisualizer {
     }
     
     renderOptimization(data) {
+        const hasOptimizations = data.optimizations_applied && data.optimizations_applied.length > 0;
+        const reductionPercent = data.stats ? Math.round((data.stats.reduction / data.stats.original_instructions) * 100) : 0;
+        
         this.visualizationContent.innerHTML = `
             <div class="flex flex-col gap-4">
-                <h3 class="text-xl font-semibold tracking-tight text-white">Optimized Code (Three-Address Code)</h3>
-                <div class="font-mono text-sm text-zinc-300">
-                    ${data.formatted_instructions ? 
-                        data.formatted_instructions.map((instr, index) => 
-                            `<div id="opt-instr-${index}" class="py-1 hover:bg-white/5 px-2 rounded mb-1 border-l-2 border-vibrant-blue/30">${instr}</div>`
-                        ).join('') :
-                        '<div class="text-yellow-300">No optimized code available</div>'
-                    }
+                <div class="flex items-center justify-between">
+                    <h3 class="text-xl font-semibold tracking-tight text-white">Code Optimization</h3>
+                    ${data.stats ? `
+                        <div class="flex items-center gap-2 text-sm">
+                            <span class="px-2 py-1 rounded bg-blue-500/20 text-blue-300">${data.stats.original_instructions} → ${data.stats.optimized_instructions}</span>
+                            ${data.stats.reduction > 0 ? 
+                                `<span class="px-2 py-1 rounded bg-green-500/20 text-green-300">-${reductionPercent}%</span>` :
+                                `<span class="px-2 py-1 rounded bg-gray-500/20 text-gray-300">No reduction</span>`
+                            }
+                        </div>
+                    ` : ''}
+                </div>
+                
+                ${hasOptimizations ? `
+                    <div class="bg-green-900/20 border border-green-500/30 rounded-lg p-3 mb-4">
+                        <h4 class="font-bold text-green-300 mb-2">Optimizations Applied:</h4>
+                        <div class="space-y-1">
+                            ${data.optimizations_applied.map((opt, index) => 
+                                `<div id="optimization-${index}" class="text-sm text-green-200 pl-2">• ${opt}</div>`
+                            ).join('')}
+                        </div>
+                    </div>
+                ` : `
+                    <div class="bg-yellow-900/20 border border-yellow-500/30 rounded-lg p-3 mb-4">
+                        <div class="text-yellow-300 font-semibold">No optimizations applied</div>
+                        <div class="text-yellow-200 text-sm mt-1">Code is already optimal or no optimization opportunities found</div>
+                    </div>
+                `}
+                
+                <div class="rounded-lg border border-white/10 p-4 bg-gradient-to-br from-slate-900/50 to-slate-800/30">
+                    <h4 class="font-bold text-zinc-200 mb-3">Optimized Three-Address Code</h4>
+                    <div class="font-mono text-sm text-zinc-300">
+                        ${data.formatted_instructions && data.formatted_instructions.length > 0 ? 
+                            data.formatted_instructions.map((instr, index) => 
+                                `<div id="opt-instr-${index}" class="py-1 hover:bg-white/5 px-2 rounded mb-1 border-l-2 border-green-500/30 transition-colors">${instr}</div>`
+                            ).join('') :
+                            '<div class="text-center py-8 text-gray-400">No optimized code generated</div>'
+                        }
+                    </div>
                 </div>
             </div>
         `;
         
+        // Animate optimizations
+        if (hasOptimizations) {
+            data.optimizations_applied.forEach((_, index) => {
+                gsap.from(`#optimization-${index}`, {
+                    x: -20,
+                    opacity: 0,
+                    duration: 0.3,
+                    delay: index * 0.1
+                });
+            });
+        }
+        
         // Animate instructions
-        if (data.formatted_instructions) {
+        if (data.formatted_instructions && data.formatted_instructions.length > 0) {
             this.animateInstructions(data.formatted_instructions, 'opt-instr');
         }
     }

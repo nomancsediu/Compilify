@@ -2,12 +2,16 @@ class SymbolTable:
     def __init__(self):
         self.symbols = {}
         self.parent = None
+        self.scope_level = 0
     
-    def define(self, name, type_, value=None):
+    def define(self, name, type_, value=None, line=None):
         self.symbols[name] = {
             'type': type_,
             'value': value,
-            'defined': True
+            'defined': True,
+            'used': False,
+            'line': line,
+            'scope': self.scope_level
         }
     
     def lookup(self, name):
@@ -17,9 +21,23 @@ class SymbolTable:
             return self.parent.lookup(name)
         return None
     
+    def mark_used(self, name):
+        if name in self.symbols:
+            self.symbols[name]['used'] = True
+        elif self.parent:
+            self.parent.mark_used(name)
+    
+    def get_unused_variables(self):
+        unused = []
+        for name, info in self.symbols.items():
+            if not info['used']:
+                unused.append(name)
+        return unused
+    
     def to_dict(self):
         return {
             'symbols': self.symbols,
+            'scope_level': self.scope_level,
             'parent': self.parent.to_dict() if self.parent else None
         }
 
@@ -28,18 +46,28 @@ class SemanticAnalyzer:
         self.symbol_table = SymbolTable()
         self.errors = []
         self.warnings = []
+        self.current_function = None
     
     def analyze(self, ast):
         try:
             self.visit_node(ast)
+            
+            # Check for unused variables
+            unused = self.symbol_table.get_unused_variables()
+            for var in unused:
+                self.warnings.append(f"Variable '{var}' declared but never used")
+            
             return {
-                'success': True,
+                'success': len(self.errors) == 0,
                 'symbol_table': self.symbol_table.to_dict(),
                 'errors': self.errors,
                 'warnings': self.warnings,
-                'type_info': self.get_type_info(ast)
+                'type_info': self.get_type_info(ast),
+                'variable_count': len(self.symbol_table.symbols),
+                'scope_info': self.get_scope_info()
             }
         except Exception as e:
+            self.errors.append(str(e))
             return {
                 'success': False,
                 'error': str(e),
@@ -105,19 +133,26 @@ class SemanticAnalyzer:
         var_name = var_info['name']
         var_type = var_info['type']
         
-        # Check if variable is already defined
-        existing = self.symbol_table.lookup(var_name)
-        if existing:
-            self.errors.append(f"Variable '{var_name}' already declared")
+        # Check if variable is already defined in current scope
+        if var_name in self.symbol_table.symbols:
+            self.errors.append(f"Variable '{var_name}' already declared in current scope")
+            return 'error'
+        
+        # Validate type
+        if var_type not in ['int', 'float', 'char', 'char*']:
+            self.errors.append(f"Invalid type '{var_type}'")
             return 'error'
         
         # If there's an initializer, check type compatibility
+        init_value = None
         if node['children']:
             expr_type = self.visit_node(node['children'][0])
             if not self.is_compatible_type(var_type, expr_type):
-                self.errors.append(f"Type mismatch: cannot assign {expr_type} to {var_type}")
+                self.errors.append(f"Type mismatch: cannot assign {expr_type} to {var_type} variable '{var_name}'")
+            else:
+                init_value = self.get_node_value(node['children'][0])
         
-        self.symbol_table.define(var_name, var_type)
+        self.symbol_table.define(var_name, var_type, init_value)
         return var_type
     
     def visit_assignment(self, node):
@@ -126,14 +161,20 @@ class SemanticAnalyzer:
         # Check if variable is declared
         existing = self.symbol_table.lookup(var_name)
         if not existing:
-            self.errors.append(f"Undeclared variable '{var_name}'")
+            self.errors.append(f"Undeclared variable '{var_name}' - must be declared before use")
             return 'error'
+        
+        # Mark variable as used
+        self.symbol_table.mark_used(var_name)
         
         expr_type = self.visit_node(node['children'][0])
         
         # Type checking
         if not self.is_compatible_type(existing['type'], expr_type):
-            self.errors.append(f"Type mismatch: cannot assign {expr_type} to {existing['type']}")
+            self.errors.append(f"Type mismatch: cannot assign {expr_type} to {existing['type']} variable '{var_name}'")
+        
+        # Update value in symbol table
+        existing['value'] = self.get_node_value(node['children'][0])
         
         return existing['type']
     
@@ -143,7 +184,10 @@ class SemanticAnalyzer:
             return True
         if target_type == 'float' and source_type in ['int', 'number']:
             return True
-        if target_type == 'int' and source_type == 'number':
+        if target_type == 'int' and source_type in ['number', 'float']:
+            self.warnings.append(f"Implicit conversion from {source_type} to {target_type} may lose precision")
+            return True
+        if target_type == 'char*' and source_type == 'string':
             return True
         return False
     
@@ -163,25 +207,62 @@ class SemanticAnalyzer:
         symbol = self.symbol_table.lookup(var_name)
         
         if not symbol:
-            self.errors.append(f"Undefined variable: '{var_name}'")
+            self.errors.append(f"Undefined variable: '{var_name}' - must be declared before use")
             return 'error'
+        
+        # Mark variable as used
+        self.symbol_table.mark_used(var_name)
         
         return symbol['type']
     
+    def get_node_value(self, node):
+        """Extract value from a node for symbol table"""
+        if node['type'] == 'NUMBER':
+            return node['value']
+        elif node['type'] == 'STRING':
+            return node['value']
+        elif node['type'] == 'IDENTIFIER':
+            symbol = self.symbol_table.lookup(node['value'])
+            return symbol['value'] if symbol else None
+        return None
+    
+    def get_scope_info(self):
+        """Get scope information for visualization"""
+        return {
+            'current_scope': self.symbol_table.scope_level,
+            'total_variables': len(self.symbol_table.symbols),
+            'used_variables': len([s for s in self.symbol_table.symbols.values() if s['used']]),
+            'unused_variables': len([s for s in self.symbol_table.symbols.values() if not s['used']])
+        }
+    
     def get_type_info(self, node):
         """Generate type annotations for visualization"""
-        if node['type'] == 'ASSIGNMENT':
-            return {
-                'node_id': id(node),
-                'type': 'assignment',
-                'variable': node['value'],
-                'expr_type': self.visit_node(node['children'][0])
-            }
-        elif node['type'] == 'BINARY_OP':
-            return {
-                'node_id': id(node),
-                'type': 'binary_operation',
-                'operator': node['value'],
-                'result_type': self.visit_node(node)
-            }
-        return None
+        type_info = []
+        
+        def collect_types(n):
+            if n['type'] == 'DECLARATION':
+                var_info = n['value']
+                type_info.append({
+                    'node_type': 'declaration',
+                    'variable': var_info['name'],
+                    'data_type': var_info['type'],
+                    'has_initializer': len(n['children']) > 0
+                })
+            elif n['type'] == 'ASSIGNMENT':
+                type_info.append({
+                    'node_type': 'assignment',
+                    'variable': n['value'],
+                    'expr_type': 'expression'
+                })
+            elif n['type'] == 'BINARY_OP':
+                type_info.append({
+                    'node_type': 'binary_operation',
+                    'operator': n['value'],
+                    'result_type': 'numeric'
+                })
+            
+            for child in n.get('children', []):
+                collect_types(child)
+        
+        collect_types(node)
+        return type_info
