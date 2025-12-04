@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html class="dark" lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>Compilify - Compiler Visualizer</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.44.0/min/vs/loader.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Anek+Bangla:wght@100..800&family=Google+Sans+Code:ital,wght@0,300..800;1,300..800&family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Ubuntu:ital,wght@0,300;0,400;0,500;0,700;1,300;1,400;1,500;1,700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+    <script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "vibrant-blue": "#3B82F6",
+                        "background-dark": "#0D1117",
+                        "surface-dark": "#161B22",
+                        "border-dark": "#30363D",
+                        "token-keyword": "#c678dd",
+                        "token-type": "#56b6c2",
+                        "token-identifier": "#abb2bf",
+                        "token-operator": "#d19a66",
+                        "token-literal": "#98c379",
+                        "token-punctuation": "#61afef",
+                    },
+                    fontFamily: {
+                        display: ["Inter", "sans-serif"],
+                        mono: ['"SF Mono"', 'ui-monospace', 'Menlo', 'Monaco', 'Consolas', '"Liberation Mono"', '"Courier New"', 'monospace'],
+                    },
+                    boxShadow: {
+                        glow: '0 0 15px 0 rgba(59, 130, 246, 0.35)',
+                    },
+                },
+            },
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 300, 'opsz' 24;
+        }
+    </style>
+</head>
+<body class="bg-background-dark text-gray-200 font-display antialiased">
+    <div class="flex flex-col h-screen">
+        <header class="p-4 border-b border-border-dark flex items-center justify-between">
+            <div class="flex items-center space-x-4">
+                <div class="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center shadow-md">
+                    <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l3 3-3 3m5 0h3"/>
+                        <rect x="3" y="4" width="18" height="16" rx="2" stroke="currentColor" stroke-width="1.5" fill="none"/>
+                    </svg>
+                </div>
+                <h1 class="text-xl font-bold tracking-tight text-white">
+                    <span class="bg-gradient-to-r from-blue-400 via-purple-500 to-pink-500 bg-clip-text text-transparent">Compilify</span>
+                </h1>
+            </div>
+        </header>
+        
+        <main class="flex-grow flex flex-col lg:grid lg:grid-cols-2 gap-4 lg:gap-6 p-3 lg:p-6 overflow-hidden">
+            <!-- Left Panel: Code Editor -->
+            <div class="flex flex-col bg-surface-dark rounded-lg border border-border-dark overflow-hidden shadow-lg h-64 lg:h-auto">
+                <div class="p-3 lg:p-4 border-b border-border-dark flex items-center justify-between">
+                    <h2 class="text-xs lg:text-sm font-semibold text-gray-400 tracking-wider uppercase">Source Code</h2>
+                </div>
+                <div class="flex-grow p-3 lg:p-4">
+                    <div id="codeEditor" class="w-full h-full rounded border border-border-dark overflow-hidden"></div>
+                </div>
+            </div>
+            
+            <!-- Right Panel: Visualization -->
+            <div class="flex flex-col bg-surface-dark rounded-lg border border-border-dark overflow-hidden shadow-lg flex-grow">
+                <div class="p-2 lg:p-3 border-b border-border-dark">
+                    <nav class="grid grid-cols-4 lg:flex lg:space-x-2 gap-1 lg:gap-0" id="phaseButtons">
+                        <button class="px-2 lg:px-3 py-1.5 lg:py-2 text-xs lg:text-sm font-medium rounded-md bg-vibrant-blue text-white shadow-glow transition-all duration-200" data-phase="lexical">Lexical</button>
+                        <button class="px-2 lg:px-3 py-1.5 lg:py-2 text-xs lg:text-sm font-medium rounded-md text-gray-400 hover:bg-white/5 transition-all duration-200" data-phase="syntax">Syntax</button>
+                        <button class="px-2 lg:px-3 py-1.5 lg:py-2 text-xs lg:text-sm font-medium rounded-md text-gray-400 hover:bg-white/5 transition-all duration-200" data-phase="semantic">Semantic</button>
+                        <button class="px-2 lg:px-3 py-1.5 lg:py-2 text-xs lg:text-sm font-medium rounded-md text-gray-400 hover:bg-white/5 transition-all duration-200" data-phase="intermediate">Inter</button>
+                        <button class="px-2 lg:px-3 py-1.5 lg:py-2 text-xs lg:text-sm font-medium rounded-md text-gray-400 hover:bg-white/5 transition-all duration-200" data-phase="optimize">Opt</button>
+                        <button class="px-2 lg:px-3 py-1.5 lg:py-2 text-xs lg:text-sm font-medium rounded-md text-gray-400 hover:bg-white/5 transition-all duration-200" data-phase="codegen">CodeGen</button>
+                        <button class="px-2 lg:px-3 py-1.5 lg:py-2 text-xs lg:text-sm font-medium rounded-md text-gray-400 hover:bg-white/5 transition-all duration-200" data-phase="output">Output</button>
+                    </nav>
+                </div>
+                <div class="p-3 lg:p-6 flex flex-col flex-grow overflow-hidden">
+                    <div id="visualizationContent" class="flex flex-col flex-grow bg-black/20 rounded-lg p-2 lg:p-4 border border-border-dark overflow-auto">
+                        <!-- Content will be dynamically loaded here -->
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+    
+    {% load static %}
+    <script src="{% static 'js/compiler.js' %}"></script>
+</body>
+</html>
