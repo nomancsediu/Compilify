@@ -90,6 +90,12 @@ def semantic_analysis(request):
             data = json.loads(request.body)
             code = data.get('code', '')
             
+        if not code.strip():
+            return Response({
+                'success': False,
+                'error': 'No code provided'
+            })
+            
         parser = Parser()
         ast = parser.parse(code)
         
@@ -98,9 +104,11 @@ def semantic_analysis(request):
         
         return Response(result)
     except Exception as e:
+        import traceback
         return Response({
             'success': False,
-            'error': str(e)
+            'error': str(e),
+            'traceback': traceback.format_exc()
         })
 
 @csrf_exempt
@@ -138,22 +146,30 @@ def optimization(request):
             data = json.loads(request.body)
             code = data.get('code', '')
             
+        if not code.strip():
+            return Response({
+                'success': False,
+                'error': 'No code provided'
+            })
+            
         parser = Parser()
         ast = parser.parse(code)
         
         generator = IntermediateGenerator()
         intermediate = generator.generate(ast)
         
-        if intermediate['success']:
+        if intermediate.get('success'):
             optimizer = Optimizer()
             result = optimizer.optimize(intermediate['intermediate_code'])
             return Response(result)
         else:
             return Response(intermediate)
     except Exception as e:
+        import traceback
         return Response({
             'success': False,
-            'error': str(e)
+            'error': str(e),
+            'traceback': traceback.format_exc()
         })
 
 @csrf_exempt

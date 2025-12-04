@@ -65,18 +65,21 @@ class Optimizer:
             
             if op == '=':
                 arg1 = instr.get('arg1')
-                if arg1:
+                result = instr.get('result')
+                
+                if arg1 and result:
                     # Check if arg1 is a known constant
                     if arg1 in constants:
                         # Propagate the constant value
-                        constants[instr['result']] = constants[arg1]
+                        constants[result] = constants[arg1]
                         optimized.append(instr)
                     else:
                         try:
                             value = float(arg1)
-                            constants[instr['result']] = value
+                            constants[result] = value
                             optimized.append(instr)
                         except (ValueError, TypeError):
+                            # Not a constant, but still valid assignment
                             optimized.append(instr)
                 else:
                     optimized.append(instr)
@@ -84,18 +87,23 @@ class Optimizer:
             elif op in ['+', '-', '*', '/', '==', '!=', '<', '<=', '>', '>=']:
                 arg1 = instr.get('arg1')
                 arg2 = instr.get('arg2')
+                result = instr.get('result')
+                
+                if not (arg1 and arg2 and result):
+                    optimized.append(instr)
+                    continue
                 
                 arg1_val = constants.get(arg1)
                 arg2_val = constants.get(arg2)
                 
                 # Try to parse as numbers if not in constants
-                if arg1_val is None and arg1:
+                if arg1_val is None:
                     try:
                         arg1_val = float(arg1)
                     except (ValueError, TypeError):
                         pass
                 
-                if arg2_val is None and arg2:
+                if arg2_val is None:
                     try:
                         arg2_val = float(arg2)
                     except (ValueError, TypeError):
@@ -105,36 +113,36 @@ class Optimizer:
                 if arg1_val is not None and arg2_val is not None:
                     try:
                         if op == '+':
-                            result = arg1_val + arg2_val
+                            calc_result = arg1_val + arg2_val
                         elif op == '-':
-                            result = arg1_val - arg2_val
+                            calc_result = arg1_val - arg2_val
                         elif op == '*':
-                            result = arg1_val * arg2_val
+                            calc_result = arg1_val * arg2_val
                         elif op == '/' and arg2_val != 0:
-                            result = arg1_val / arg2_val
+                            calc_result = arg1_val / arg2_val
                         elif op == '==':
-                            result = 1 if arg1_val == arg2_val else 0
+                            calc_result = 1 if arg1_val == arg2_val else 0
                         elif op == '!=':
-                            result = 1 if arg1_val != arg2_val else 0
+                            calc_result = 1 if arg1_val != arg2_val else 0
                         elif op == '<':
-                            result = 1 if arg1_val < arg2_val else 0
+                            calc_result = 1 if arg1_val < arg2_val else 0
                         elif op == '<=':
-                            result = 1 if arg1_val <= arg2_val else 0
+                            calc_result = 1 if arg1_val <= arg2_val else 0
                         elif op == '>':
-                            result = 1 if arg1_val > arg2_val else 0
+                            calc_result = 1 if arg1_val > arg2_val else 0
                         elif op == '>=':
-                            result = 1 if arg1_val >= arg2_val else 0
+                            calc_result = 1 if arg1_val >= arg2_val else 0
                         else:
                             optimized.append(instr)
                             continue
                         
                         # Replace with constant assignment
-                        result_str = str(int(result) if isinstance(result, float) and result.is_integer() else result)
-                        new_instr = {'op': '=', 'arg1': result_str, 'arg2': None, 'result': instr['result']}
+                        result_str = str(int(calc_result) if isinstance(calc_result, float) and calc_result.is_integer() else calc_result)
+                        new_instr = {'op': '=', 'arg1': result_str, 'arg2': None, 'result': result}
                         optimized.append(new_instr)
-                        constants[instr['result']] = result
-                        self.optimizations_applied.append(f"Constant folding: {arg1_val} {op} {arg2_val} = {result}")
-                    except:
+                        constants[result] = calc_result
+                        self.optimizations_applied.append(f"Constant folding: {arg1_val} {op} {arg2_val} = {calc_result}")
+                    except Exception as e:
                         optimized.append(instr)
                 else:
                     optimized.append(instr)
@@ -147,23 +155,41 @@ class Optimizer:
         """Remove unused temporary variables"""
         used_vars = set()
         
-        # Find all used variables
-        for instr in instructions:
-            if instr.get('arg1'):
-                used_vars.add(instr['arg1'])
-            if instr.get('arg2'):
-                used_vars.add(instr['arg2'])
+        # Find all used variables (multiple passes to handle chains)
+        changed = True
+        while changed:
+            changed = False
+            old_size = len(used_vars)
+            
+            for instr in instructions:
+                result = instr.get('result')
+                
+                # If this instruction's result is used, mark its arguments as used
+                if (result and (result in used_vars or 
+                    not str(result).startswith('t') or 
+                    instr.get('op') in ['declare', 'printf', 'if_false', 'goto', 'label'])):
+                    
+                    if instr.get('arg1'):
+                        used_vars.add(instr['arg1'])
+                    if instr.get('arg2'):
+                        used_vars.add(instr['arg2'])
+                    used_vars.add(result)
+            
+            if len(used_vars) > old_size:
+                changed = True
         
-        # Keep only instructions that define used variables or are assignments to program variables
+        # Keep only instructions that define used variables
         optimized = []
         for instr in instructions:
             result = instr.get('result')
+            op = instr.get('op')
+            
             if (result and (result in used_vars or 
                 not str(result).startswith('t') or 
-                instr['op'] in ['=', 'declare', 'printf'])):
+                op in ['declare', 'printf', 'if_false', 'goto', 'label'])):
                 optimized.append(instr)
             else:
-                self.optimizations_applied.append(f"Dead code elimination: removed {instr['op']} instruction")
+                self.optimizations_applied.append(f"Dead code elimination: removed unused temporary {result}")
         
         return optimized
     

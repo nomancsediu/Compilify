@@ -77,34 +77,46 @@ class SemanticAnalyzer:
             }
     
     def visit_node(self, node):
-        if node['type'] == 'DECLARATION':
+        if not node or not isinstance(node, dict) or 'type' not in node:
+            return 'void'
+            
+        node_type = node['type']
+        
+        if node_type == 'DECLARATION':
             return self.visit_declaration(node)
-        elif node['type'] == 'ASSIGNMENT':
+        elif node_type == 'ASSIGNMENT':
             return self.visit_assignment(node)
-        elif node['type'] == 'BINARY_OP':
+        elif node_type == 'BINARY_OP':
             return self.visit_binary_op(node)
-        elif node['type'] == 'COMPARISON':
+        elif node_type == 'COMPARISON':
             return self.visit_comparison(node)
-        elif node['type'] == 'NUMBER':
-            return 'int' if '.' not in str(node['value']) else 'float'
-        elif node['type'] == 'IDENTIFIER':
+        elif node_type == 'NUMBER':
+            value = node.get('value', 0)
+            return 'int' if isinstance(value, int) or (isinstance(value, float) and value.is_integer()) else 'float'
+        elif node_type == 'IDENTIFIER':
             return self.visit_identifier(node)
-        elif node['type'] == 'STRING':
+        elif node_type == 'STRING':
             return 'char*'
-        elif node['type'] == 'PRINTF':
+        elif node_type == 'PRINTF':
             return self.visit_printf(node)
-        elif node['type'] in ['IF', 'IF_ELSE', 'WHILE']:
+        elif node_type in ['IF', 'IF_ELSE', 'WHILE']:
             return self.visit_control_flow(node)
         else:
-            raise ValueError(f"Unknown node type: {node['type']}")
+            self.warnings.append(f"Unknown node type: {node_type}")
+            return 'void'
     
     def visit_comparison(self, node):
-        left_type = self.visit_node(node['children'][0])
-        right_type = self.visit_node(node['children'][1])
+        children = node.get('children', [])
+        if len(children) < 2:
+            self.errors.append("Comparison operation requires two operands")
+            return 'int'
+            
+        left_type = self.visit_node(children[0])
+        right_type = self.visit_node(children[1])
         
         # Comparison operations return boolean (int in C)
-        if not self.is_compatible_type(left_type, right_type):
-            self.errors.append(f"Type mismatch in comparison: {left_type} {node['value']} {right_type}")
+        if not self.is_compatible_type(left_type, right_type) and not self.is_compatible_type(right_type, left_type):
+            self.errors.append(f"Type mismatch in comparison: {left_type} {node.get('value', '?')} {right_type}")
         
         return 'int'
     
@@ -129,9 +141,17 @@ class SemanticAnalyzer:
         return 'void'
     
     def visit_declaration(self, node):
-        var_info = node['value']
-        var_name = var_info['name']
-        var_type = var_info['type']
+        var_info = node.get('value')
+        if not var_info or not isinstance(var_info, dict):
+            self.errors.append("Invalid declaration node")
+            return 'error'
+            
+        var_name = var_info.get('name')
+        var_type = var_info.get('type')
+        
+        if not var_name or not var_type:
+            self.errors.append("Declaration missing variable name or type")
+            return 'error'
         
         # Check if variable is already defined in current scope
         if var_name in self.symbol_table.symbols:
@@ -145,18 +165,22 @@ class SemanticAnalyzer:
         
         # If there's an initializer, check type compatibility
         init_value = None
-        if node['children']:
-            expr_type = self.visit_node(node['children'][0])
+        children = node.get('children', [])
+        if children:
+            expr_type = self.visit_node(children[0])
             if not self.is_compatible_type(var_type, expr_type):
                 self.errors.append(f"Type mismatch: cannot assign {expr_type} to {var_type} variable '{var_name}'")
             else:
-                init_value = self.get_node_value(node['children'][0])
+                init_value = self.get_node_value(children[0])
         
         self.symbol_table.define(var_name, var_type, init_value)
         return var_type
     
     def visit_assignment(self, node):
-        var_name = node['value']
+        var_name = node.get('value')
+        if not var_name:
+            self.errors.append("Assignment missing variable name")
+            return 'error'
         
         # Check if variable is declared
         existing = self.symbol_table.lookup(var_name)
@@ -167,14 +191,20 @@ class SemanticAnalyzer:
         # Mark variable as used
         self.symbol_table.mark_used(var_name)
         
-        expr_type = self.visit_node(node['children'][0])
+        children = node.get('children', [])
+        if not children:
+            self.errors.append("Assignment missing expression")
+            return existing['type']
+            
+        expr_type = self.visit_node(children[0])
         
         # Type checking
         if not self.is_compatible_type(existing['type'], expr_type):
             self.errors.append(f"Type mismatch: cannot assign {expr_type} to {existing['type']} variable '{var_name}'")
         
         # Update value in symbol table
-        existing['value'] = self.get_node_value(node['children'][0])
+        if existing:
+            existing['value'] = self.get_node_value(children[0])
         
         return existing['type']
     
@@ -192,15 +222,23 @@ class SemanticAnalyzer:
         return False
     
     def visit_binary_op(self, node):
-        left_type = self.visit_node(node['children'][0])
-        right_type = self.visit_node(node['children'][1])
+        children = node.get('children', [])
+        if len(children) < 2:
+            self.errors.append("Binary operation requires two operands")
+            return 'error'
+            
+        left_type = self.visit_node(children[0])
+        right_type = self.visit_node(children[1])
         
-        # Type checking
-        if left_type != right_type:
-            self.errors.append(f"Type mismatch: {left_type} {node['value']} {right_type}")
+        # Type checking with compatibility
+        if not self.is_compatible_type(left_type, right_type) and not self.is_compatible_type(right_type, left_type):
+            self.errors.append(f"Type mismatch in binary operation: {left_type} {node.get('value', '?')} {right_type}")
             return 'error'
         
-        return left_type
+        # Return the "higher" type (float > int)
+        if left_type == 'float' or right_type == 'float':
+            return 'float'
+        return 'int'
     
     def visit_identifier(self, node):
         var_name = node['value']
