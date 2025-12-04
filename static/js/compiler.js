@@ -424,8 +424,8 @@ class CompilerVisualizer {
         const nodeCount = this.countNodes(astData);
         const treeDepth = this.getTreeDepth(astData);
         
-        const nodeSpacing = isSmallMobile ? 300 : isMobile ? 400 : 500;
-        const levelSpacing = isSmallMobile ? 200 : isMobile ? 250 : 300;
+        const nodeSpacing = isSmallMobile ? 500 : isMobile ? 600 : 700;
+        const levelSpacing = isSmallMobile ? 300 : isMobile ? 350 : 400;
         
         const dynamicWidth = Math.max(width, nodeCount * nodeSpacing);
         const dynamicHeight = Math.max(height, treeDepth * levelSpacing);
@@ -516,8 +516,8 @@ class CompilerVisualizer {
             .style('opacity', 0);
         
         // Much larger node dimensions for better visibility
-        const nodeHeight = isSmallMobile ? 80 : isMobile ? 90 : 100;
-        const borderRadius = isSmallMobile ? 20 : 25;
+        const nodeHeight = isSmallMobile ? 120 : isMobile ? 140 : 160;
+        const borderRadius = isSmallMobile ? 25 : 30;
         
         // Add node backgrounds
         nodes.append('rect')
@@ -529,11 +529,11 @@ class CompilerVisualizer {
             .attr('ry', borderRadius)
             .style('fill', d => `url(#gradient-${d.data.type})`)
             .style('stroke', d => this.getNodeColor(d.data.type))
-            .style('stroke-width', 2)
+            .style('stroke-width', 3)
             .style('filter', 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))');
         
         // Much larger font for better readability
-        const fontSize = isSmallMobile ? '24px' : isMobile ? '28px' : '32px';
+        const fontSize = isSmallMobile ? '32px' : isMobile ? '36px' : '40px';
         
         nodes.append('text')
             .attr('dy', 3)
@@ -579,10 +579,10 @@ class CompilerVisualizer {
     
     getNodeWidth(node, isMobile = false, isSmallMobile = false) {
         const text = this.getNodeText(node, isMobile, isSmallMobile);
-        const charWidth = isSmallMobile ? 20 : isMobile ? 24 : 28;
-        const padding = isSmallMobile ? 60 : isMobile ? 70 : 80;
-        const minWidth = isSmallMobile ? 200 : isMobile ? 240 : 280;
-        const maxWidth = isSmallMobile ? 450 : isMobile ? 550 : 650;
+        const charWidth = isSmallMobile ? 30 : isMobile ? 35 : 40;
+        const padding = isSmallMobile ? 80 : isMobile ? 100 : 120;
+        const minWidth = isSmallMobile ? 300 : isMobile ? 350 : 400;
+        const maxWidth = isSmallMobile ? 600 : isMobile ? 700 : 800;
         return Math.max(minWidth, Math.min(maxWidth, text.length * charWidth + padding));
     }
     
