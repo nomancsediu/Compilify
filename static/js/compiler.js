@@ -62,9 +62,9 @@ class CompilerVisualizer {
                 button.addEventListener('click', (e) => {
                     // Update active button
                     this.phaseButtons.forEach(btn => {
-                        btn.className = 'flex-1 px-3 py-2 text-sm font-medium rounded-md text-gray-400 hover:bg-white/5 transition-all duration-200';
+                        btn.className = 'flex-1 min-w-0 px-2 py-2 text-xs font-medium rounded-md text-gray-400 hover:bg-white/5 transition-all duration-200';
                     });
-                    e.target.className = 'flex-1 px-3 py-2 text-sm font-medium rounded-md bg-vibrant-blue text-white shadow-glow transition-all duration-200';
+                    e.target.className = 'flex-1 min-w-0 px-2 py-2 text-xs font-medium rounded-md bg-vibrant-blue text-white shadow-glow transition-all duration-200';
                     
                     this.currentPhase = e.target.dataset.phase;
                     this.visualize();
