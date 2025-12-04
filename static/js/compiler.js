@@ -397,14 +397,20 @@ class CompilerVisualizer {
             <div class="flex flex-col gap-2 h-full">
                 <div class="flex items-center justify-between">
                     <h3 class="text-lg font-bold text-zinc-100">Abstract Syntax Tree</h3>
-                    <div class="flex items-center gap-2">
-                        <button id="zoomOut" class="px-2 py-1 text-xs bg-gray-600 hover:bg-gray-500 text-white rounded transition-colors">Zoom Out</button>
-                        <button id="zoomReset" class="px-2 py-1 text-xs bg-blue-600 hover:bg-blue-500 text-white rounded transition-colors">Reset</button>
-                        <button id="zoomIn" class="px-2 py-1 text-xs bg-gray-600 hover:bg-gray-500 text-white rounded transition-colors">Zoom In</button>
+                    <div class="flex gap-2" id="zoomControls">
+                        <button id="zoomIn" class="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-sm transition-colors">
+                            Zoom In
+                        </button>
+                        <button id="zoomOut" class="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-sm transition-colors">
+                            Zoom Out
+                        </button>
+                        <button id="zoomReset" class="px-3 py-1 bg-gray-600 hover:bg-gray-700 text-white rounded text-sm transition-colors">
+                            Reset
+                        </button>
                     </div>
                 </div>
-                <div class="rounded-lg border border-white/10 p-2 bg-gradient-to-br from-slate-900/50 to-slate-800/30 flex-1 overflow-hidden" style="min-height: 90vh;">
-                    <div id="d3TreeContainer" class="w-full h-full overflow-auto"></div>
+                <div class="rounded-lg border border-white/10 p-2 bg-gradient-to-br from-slate-900/50 to-slate-800/30 flex-1 overflow-auto" style="min-height: 90vh;">
+                    <div id="d3TreeContainer" class="w-full h-full"></div>
                 </div>
             </div>
         `;
@@ -421,37 +427,35 @@ class CompilerVisualizer {
         const isMobile = window.innerWidth < 768;
         const isSmallMobile = window.innerWidth < 480;
         
-        // Responsive dimensions - extremely large for complex expressions
+        // Calculate complexity factor based on node count and depth
         const nodeCount = this.countNodes(astData);
         const treeDepth = this.getTreeDepth(astData);
-        const complexityFactor = Math.max(1, nodeCount / 5); // Scale based on complexity
+        const complexityFactor = Math.max(1, Math.min(4, (nodeCount + treeDepth) / 8));
         
-        const baseWidth = isSmallMobile ? 1500 * complexityFactor : isMobile ? 2500 * complexityFactor : 3500 * complexityFactor;
-        const baseHeight = isSmallMobile ? 1000 * complexityFactor : isMobile ? 1500 * complexityFactor : 2000 * complexityFactor;
+        // Much larger base dimensions with complexity scaling
+        const baseWidth = (isSmallMobile ? 2000 : isMobile ? 3000 : 4000) * complexityFactor;
+        const baseHeight = (isSmallMobile ? 1500 : isMobile ? 2000 : 2500) * complexityFactor;
         
         const width = Math.max(containerRect.width || baseWidth, baseWidth);
         const height = Math.max(containerRect.height || baseHeight, baseHeight);
         
-        // Mobile-optimized tree dimensions - increased spacing
-        const nodeCount = this.countNodes(astData);
-        const treeDepth = this.getTreeDepth(astData);
-        
-        const nodeSpacing = isSmallMobile ? 250 * complexityFactor : isMobile ? 300 * complexityFactor : 400 * complexityFactor;
-        const levelSpacing = isSmallMobile ? 180 * complexityFactor : isMobile ? 220 * complexityFactor : 280 * complexityFactor;
+        // Much larger spacing for better visibility
+        const nodeSpacing = (isSmallMobile ? 300 : isMobile ? 400 : 500) * complexityFactor;
+        const levelSpacing = (isSmallMobile ? 200 : isMobile ? 250 : 300) * complexityFactor;
         
         const dynamicWidth = Math.max(width, nodeCount * nodeSpacing);
         const dynamicHeight = Math.max(height, treeDepth * levelSpacing);
         
-        const svg = container.append('svg')
-            .attr('width', dynamicWidth)
-            .attr('height', dynamicHeight)
-            .attr('viewBox', `0 0 ${dynamicWidth} ${dynamicHeight}`)
-            .style('display', 'block')
-            .style('margin', '0 auto');
+        this.currentZoom = this.currentZoom || 1;
         
-        // Store initial dimensions for zoom
-        this.astDimensions = { width: dynamicWidth, height: dynamicHeight };
-        this.currentZoom = 1;
+        const svg = container.append('svg')
+            .attr('width', '100%')
+            .attr('height', '100%')
+            .attr('viewBox', `0 0 ${dynamicWidth} ${dynamicHeight}`)
+            .attr('preserveAspectRatio', 'xMidYMid meet')
+            .style('max-width', '100%')
+            .style('height', 'auto')
+            .style('transform', `scale(${this.currentZoom})`);
         
         // Create gradient definitions
         const defs = svg.append('defs');
@@ -530,9 +534,9 @@ class CompilerVisualizer {
             .attr('transform', d => `translate(${d.x}, ${d.y})`)
             .style('opacity', 0);
         
-        // Mobile-responsive node dimensions - extremely large
-        const nodeHeight = isSmallMobile ? 50 : isMobile ? 55 : 60;
-        const borderRadius = isSmallMobile ? 10 : 12;
+        // Much larger node dimensions for better visibility
+        const nodeHeight = (isSmallMobile ? 70 : isMobile ? 80 : 90) * complexityFactor;
+        const borderRadius = isSmallMobile ? 15 : 18;
         
         // Add node backgrounds
         nodes.append('rect')
@@ -547,8 +551,8 @@ class CompilerVisualizer {
             .style('stroke-width', isSmallMobile ? 1 : 1.5)
             .style('filter', 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))');
         
-        // Mobile-responsive text - very large font
-        const fontSize = isSmallMobile ? '16px' : isMobile ? '18px' : '20px';
+        // Much larger font for better readability
+        const fontSize = (isSmallMobile ? 20 : isMobile ? 24 : 28) * Math.min(complexityFactor, 1.5) + 'px';
         
         nodes.append('text')
             .attr('dy', 3)
@@ -594,10 +598,10 @@ class CompilerVisualizer {
     
     getNodeWidth(node, isMobile = false, isSmallMobile = false) {
         const text = this.getNodeText(node, isMobile, isSmallMobile);
-        const charWidth = isSmallMobile ? 12 : isMobile ? 14 : 16;
-        const padding = isSmallMobile ? 30 : isMobile ? 35 : 40;
-        const minWidth = isSmallMobile ? 120 : isMobile ? 140 : 160;
-        const maxWidth = isSmallMobile ? 250 : isMobile ? 300 : 350;
+        const charWidth = isSmallMobile ? 18 : isMobile ? 22 : 26;
+        const padding = isSmallMobile ? 50 : isMobile ? 60 : 70;
+        const minWidth = isSmallMobile ? 180 : isMobile ? 220 : 260;
+        const maxWidth = isSmallMobile ? 400 : isMobile ? 500 : 600;
         return Math.max(minWidth, Math.min(maxWidth, text.length * charWidth + padding));
     }
     
@@ -638,6 +642,32 @@ class CompilerVisualizer {
         return colors[type] || '#6b7280';
     }
     
+    setupZoomControls() {
+        this.currentZoom = this.currentZoom || 1;
+        
+        document.getElementById('zoomIn').addEventListener('click', () => {
+            this.currentZoom = Math.min(this.currentZoom * 1.2, 3);
+            this.applyZoom();
+        });
+        
+        document.getElementById('zoomOut').addEventListener('click', () => {
+            this.currentZoom = Math.max(this.currentZoom / 1.2, 0.3);
+            this.applyZoom();
+        });
+        
+        document.getElementById('zoomReset').addEventListener('click', () => {
+            this.currentZoom = 1;
+            this.applyZoom();
+        });
+    }
+    
+    applyZoom() {
+        const svg = d3.select('#d3TreeContainer svg');
+        if (!svg.empty()) {
+            svg.style('transform', `scale(${this.currentZoom})`);
+        }
+    }
+    
     animateD3Tree(links, nodes) {
         // Animate links
         links.transition()
@@ -669,41 +699,6 @@ class CompilerVisualizer {
                 .duration(200)
                 .attr('transform', `translate(${d.x}, ${d.y}) scale(1)`);
         });
-    }
-    
-    setupZoomControls() {
-        const zoomIn = document.getElementById('zoomIn');
-        const zoomOut = document.getElementById('zoomOut');
-        const zoomReset = document.getElementById('zoomReset');
-        const svg = d3.select('#d3TreeContainer svg');
-        
-        if (!svg.node()) return;
-        
-        zoomIn?.addEventListener('click', () => {
-            this.currentZoom = Math.min(this.currentZoom * 1.2, 3);
-            this.applyZoom(svg);
-        });
-        
-        zoomOut?.addEventListener('click', () => {
-            this.currentZoom = Math.max(this.currentZoom / 1.2, 0.3);
-            this.applyZoom(svg);
-        });
-        
-        zoomReset?.addEventListener('click', () => {
-            this.currentZoom = 1;
-            this.applyZoom(svg);
-        });
-    }
-    
-    applyZoom(svg) {
-        const { width, height } = this.astDimensions;
-        const newWidth = width * this.currentZoom;
-        const newHeight = height * this.currentZoom;
-        
-        svg.transition()
-            .duration(300)
-            .attr('width', newWidth)
-            .attr('height', newHeight);
     }
     
     renderAnimatedTree(ast) {
