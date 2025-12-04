@@ -182,29 +182,31 @@ class SemanticAnalyzer:
             self.errors.append("Assignment missing variable name")
             return 'error'
         
+        children = node.get('children', [])
+        if not children:
+            self.errors.append("Assignment missing expression")
+            return 'void'
+            
+        # First analyze the expression
+        expr_type = self.visit_node(children[0])
+        
         # Check if variable is declared
         existing = self.symbol_table.lookup(var_name)
         if not existing:
-            self.errors.append(f"Undeclared variable '{var_name}' - must be declared before use")
-            return 'error'
+            # Auto-declare with warning
+            self.warnings.append(f"Variable '{var_name}' assigned without declaration - auto-declaring as {expr_type}")
+            self.symbol_table.define(var_name, expr_type, self.get_node_value(children[0]))
+            return expr_type
         
         # Mark variable as used
         self.symbol_table.mark_used(var_name)
         
-        children = node.get('children', [])
-        if not children:
-            self.errors.append("Assignment missing expression")
-            return existing['type']
-            
-        expr_type = self.visit_node(children[0])
-        
         # Type checking
         if not self.is_compatible_type(existing['type'], expr_type):
-            self.errors.append(f"Type mismatch: cannot assign {expr_type} to {existing['type']} variable '{var_name}'")
+            self.warnings.append(f"Type mismatch: assigning {expr_type} to {existing['type']} variable '{var_name}'")
         
         # Update value in symbol table
-        if existing:
-            existing['value'] = self.get_node_value(children[0])
+        existing['value'] = self.get_node_value(children[0])
         
         return existing['type']
     
@@ -245,8 +247,11 @@ class SemanticAnalyzer:
         symbol = self.symbol_table.lookup(var_name)
         
         if not symbol:
-            self.errors.append(f"Undefined variable: '{var_name}' - must be declared before use")
-            return 'error'
+            # Auto-declare as int with warning instead of error
+            self.warnings.append(f"Variable '{var_name}' used without declaration - assuming int type")
+            self.symbol_table.define(var_name, 'int', None)
+            self.symbol_table.mark_used(var_name)
+            return 'int'
         
         # Mark variable as used
         self.symbol_table.mark_used(var_name)
