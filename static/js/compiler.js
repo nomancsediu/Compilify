@@ -395,28 +395,14 @@ class CompilerVisualizer {
     renderAST(ast) {
         this.visualizationContent.innerHTML = `
             <div class="flex flex-col gap-2 h-full">
-                <div class="flex items-center justify-between">
-                    <h3 class="text-lg font-bold text-zinc-100">Abstract Syntax Tree</h3>
-                    <div class="flex gap-2" id="zoomControls">
-                        <button id="zoomIn" class="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-sm transition-colors">
-                            Zoom In
-                        </button>
-                        <button id="zoomOut" class="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-sm transition-colors">
-                            Zoom Out
-                        </button>
-                        <button id="zoomReset" class="px-3 py-1 bg-gray-600 hover:bg-gray-700 text-white rounded text-sm transition-colors">
-                            Reset
-                        </button>
-                    </div>
-                </div>
-                <div class="rounded-lg border border-white/10 p-2 bg-gradient-to-br from-slate-900/50 to-slate-800/30 flex-1 overflow-auto" style="min-height: 90vh;">
+                <h3 class="text-lg font-bold text-zinc-100">Abstract Syntax Tree</h3>
+                <div class="rounded-lg border border-white/10 p-2 bg-gradient-to-br from-slate-900/50 to-slate-800/30 flex-1" style="min-height: 90vh;">
                     <div id="d3TreeContainer" class="w-full h-full"></div>
                 </div>
             </div>
         `;
         
         this.renderD3Tree(ast);
-        this.setupZoomControls();
     }
     
     renderD3Tree(astData) {
@@ -427,26 +413,22 @@ class CompilerVisualizer {
         const isMobile = window.innerWidth < 768;
         const isSmallMobile = window.innerWidth < 480;
         
-        // Calculate complexity factor based on node count and depth
-        const nodeCount = this.countNodes(astData);
-        const treeDepth = this.getTreeDepth(astData);
-        const complexityFactor = Math.max(1, Math.min(4, (nodeCount + treeDepth) / 8));
-        
-        // Much larger base dimensions with complexity scaling
-        const baseWidth = (isSmallMobile ? 2000 : isMobile ? 3000 : 4000) * complexityFactor;
-        const baseHeight = (isSmallMobile ? 1500 : isMobile ? 2000 : 2500) * complexityFactor;
+        // Responsive dimensions - much larger for all devices
+        const baseWidth = isSmallMobile ? 1800 : isMobile ? 2400 : 3000;
+        const baseHeight = isSmallMobile ? 1200 : isMobile ? 1600 : 2000;
         
         const width = Math.max(containerRect.width || baseWidth, baseWidth);
         const height = Math.max(containerRect.height || baseHeight, baseHeight);
         
-        // Much larger spacing for better visibility
-        const nodeSpacing = (isSmallMobile ? 300 : isMobile ? 400 : 500) * complexityFactor;
-        const levelSpacing = (isSmallMobile ? 200 : isMobile ? 250 : 300) * complexityFactor;
+        // Mobile-optimized tree dimensions - increased spacing
+        const nodeCount = this.countNodes(astData);
+        const treeDepth = this.getTreeDepth(astData);
+        
+        const nodeSpacing = isSmallMobile ? 300 : isMobile ? 400 : 500;
+        const levelSpacing = isSmallMobile ? 200 : isMobile ? 250 : 300;
         
         const dynamicWidth = Math.max(width, nodeCount * nodeSpacing);
         const dynamicHeight = Math.max(height, treeDepth * levelSpacing);
-        
-        this.currentZoom = this.currentZoom || 1;
         
         const svg = container.append('svg')
             .attr('width', '100%')
@@ -454,8 +436,7 @@ class CompilerVisualizer {
             .attr('viewBox', `0 0 ${dynamicWidth} ${dynamicHeight}`)
             .attr('preserveAspectRatio', 'xMidYMid meet')
             .style('max-width', '100%')
-            .style('height', 'auto')
-            .style('transform', `scale(${this.currentZoom})`);
+            .style('height', 'auto');
         
         // Create gradient definitions
         const defs = svg.append('defs');
@@ -493,17 +474,17 @@ class CompilerVisualizer {
         const root = d3.hierarchy(astData);
         
         // Mobile-responsive tree layout - increased margins and separation
-        const margin = isSmallMobile ? 60 : isMobile ? 80 : 120;
+        const margin = isSmallMobile ? 80 : isMobile ? 100 : 150;
         const treeLayout = d3.tree()
             .size([dynamicWidth - margin * 2, dynamicHeight - margin])
             .separation((a, b) => {
                 const aWidth = this.getNodeWidth(a.data, isMobile, isSmallMobile);
                 const bWidth = this.getNodeWidth(b.data, isMobile, isSmallMobile);
-                const minSeparation = (aWidth + bWidth) / 2 + (isSmallMobile ? 40 : isMobile ? 50 : 60);
-                const scaleFactor = isSmallMobile ? 80 : isMobile ? 100 : 120;
+                const minSeparation = (aWidth + bWidth) / 2 + (isSmallMobile ? 60 : isMobile ? 80 : 100);
+                const scaleFactor = isSmallMobile ? 120 : isMobile ? 150 : 180;
                 return a.parent === b.parent ? 
-                    Math.max(1.5, minSeparation / scaleFactor) : 
-                    Math.max(2.5, minSeparation / (scaleFactor * 0.8));
+                    Math.max(2, minSeparation / scaleFactor) : 
+                    Math.max(3, minSeparation / (scaleFactor * 0.8));
             });
         
         treeLayout(root);
@@ -522,7 +503,7 @@ class CompilerVisualizer {
             )
             .style('fill', 'none')
             .style('stroke', '#6366f1')
-            .style('stroke-width', isSmallMobile ? 1.5 : 2)
+            .style('stroke-width', isSmallMobile ? 2 : 3)
             .style('stroke-opacity', 0)
             .style('filter', 'drop-shadow(0 2px 4px rgba(99, 102, 241, 0.3))');
         
@@ -535,8 +516,8 @@ class CompilerVisualizer {
             .style('opacity', 0);
         
         // Much larger node dimensions for better visibility
-        const nodeHeight = (isSmallMobile ? 70 : isMobile ? 80 : 90) * complexityFactor;
-        const borderRadius = isSmallMobile ? 15 : 18;
+        const nodeHeight = isSmallMobile ? 80 : isMobile ? 90 : 100;
+        const borderRadius = isSmallMobile ? 20 : 25;
         
         // Add node backgrounds
         nodes.append('rect')
@@ -548,11 +529,11 @@ class CompilerVisualizer {
             .attr('ry', borderRadius)
             .style('fill', d => `url(#gradient-${d.data.type})`)
             .style('stroke', d => this.getNodeColor(d.data.type))
-            .style('stroke-width', isSmallMobile ? 1 : 1.5)
+            .style('stroke-width', 2)
             .style('filter', 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))');
         
         // Much larger font for better readability
-        const fontSize = (isSmallMobile ? 20 : isMobile ? 24 : 28) * Math.min(complexityFactor, 1.5) + 'px';
+        const fontSize = isSmallMobile ? '24px' : isMobile ? '28px' : '32px';
         
         nodes.append('text')
             .attr('dy', 3)
@@ -598,10 +579,10 @@ class CompilerVisualizer {
     
     getNodeWidth(node, isMobile = false, isSmallMobile = false) {
         const text = this.getNodeText(node, isMobile, isSmallMobile);
-        const charWidth = isSmallMobile ? 18 : isMobile ? 22 : 26;
-        const padding = isSmallMobile ? 50 : isMobile ? 60 : 70;
-        const minWidth = isSmallMobile ? 180 : isMobile ? 220 : 260;
-        const maxWidth = isSmallMobile ? 400 : isMobile ? 500 : 600;
+        const charWidth = isSmallMobile ? 20 : isMobile ? 24 : 28;
+        const padding = isSmallMobile ? 60 : isMobile ? 70 : 80;
+        const minWidth = isSmallMobile ? 200 : isMobile ? 240 : 280;
+        const maxWidth = isSmallMobile ? 450 : isMobile ? 550 : 650;
         return Math.max(minWidth, Math.min(maxWidth, text.length * charWidth + padding));
     }
     
@@ -642,31 +623,7 @@ class CompilerVisualizer {
         return colors[type] || '#6b7280';
     }
     
-    setupZoomControls() {
-        this.currentZoom = this.currentZoom || 1;
-        
-        document.getElementById('zoomIn').addEventListener('click', () => {
-            this.currentZoom = Math.min(this.currentZoom * 1.2, 3);
-            this.applyZoom();
-        });
-        
-        document.getElementById('zoomOut').addEventListener('click', () => {
-            this.currentZoom = Math.max(this.currentZoom / 1.2, 0.3);
-            this.applyZoom();
-        });
-        
-        document.getElementById('zoomReset').addEventListener('click', () => {
-            this.currentZoom = 1;
-            this.applyZoom();
-        });
-    }
-    
-    applyZoom() {
-        const svg = d3.select('#d3TreeContainer svg');
-        if (!svg.empty()) {
-            svg.style('transform', `scale(${this.currentZoom})`);
-        }
-    }
+
     
     animateD3Tree(links, nodes) {
         // Animate links
