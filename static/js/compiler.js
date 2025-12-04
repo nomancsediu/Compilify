@@ -394,91 +394,63 @@ class CompilerVisualizer {
     
     renderAST(ast) {
         this.visualizationContent.innerHTML = `
-            <div class="flex flex-col gap-4 h-full">
-                <div class="flex items-center justify-between">
-                    <h3 class="text-xl font-bold text-zinc-100">Abstract Syntax Tree</h3>
-                    <div class="flex items-center gap-2 text-sm">
-                        <span class="px-2 py-1 rounded bg-blue-500/20 text-blue-300">${this.countNodes(ast)} Nodes</span>
-                        <span class="px-2 py-1 rounded bg-purple-500/20 text-purple-300">Depth: ${this.getTreeDepth(ast)}</span>
-                    </div>
-                </div>
-                <div class="rounded-lg border border-white/10 p-4 bg-gradient-to-br from-slate-900/50 to-slate-800/30 flex-1" style="min-height: 85vh;">
-                    <div id="d3TreeContainer" class="w-full h-full relative overflow-auto">
-                        <div class="absolute top-2 right-2 z-10 flex gap-2">
-                            <button id="zoomIn" class="px-2 py-1 bg-blue-500/20 text-blue-300 rounded hover:bg-blue-500/30 transition-colors text-xs">Zoom In</button>
-                            <button id="zoomOut" class="px-2 py-1 bg-blue-500/20 text-blue-300 rounded hover:bg-blue-500/30 transition-colors text-xs">Zoom Out</button>
-                            <button id="resetZoom" class="px-2 py-1 bg-blue-500/20 text-blue-300 rounded hover:bg-blue-500/30 transition-colors text-xs">Reset</button>
-                        </div>
-                    </div>
+            <div class="flex flex-col gap-2 h-full">
+                <h3 class="text-lg font-bold text-zinc-100">Abstract Syntax Tree</h3>
+                <div class="rounded-lg border border-white/10 p-2 bg-gradient-to-br from-slate-900/50 to-slate-800/30 flex-1" style="min-height: 90vh;">
+                    <div id="d3TreeContainer" class="w-full h-full"></div>
                 </div>
             </div>
         `;
         
-        this.renderEnhancedD3Tree(ast);
+        this.renderD3Tree(ast);
     }
     
-    renderEnhancedD3Tree(astData) {
+    renderD3Tree(astData) {
         const container = d3.select('#d3TreeContainer');
-        container.selectAll('svg').remove();
+        container.selectAll('*').remove();
         
         const containerRect = container.node().getBoundingClientRect();
         const isMobile = window.innerWidth < 768;
         const isSmallMobile = window.innerWidth < 480;
         
-        // Much larger dimensions for comprehensive AST
-        const baseWidth = isSmallMobile ? 2500 : isMobile ? 3500 : 4500;
-        const baseHeight = isSmallMobile ? 2000 : isMobile ? 2800 : 3500;
+        // Responsive dimensions - much larger for all devices
+        const baseWidth = isSmallMobile ? 1800 : isMobile ? 2400 : 3000;
+        const baseHeight = isSmallMobile ? 1200 : isMobile ? 1600 : 2000;
         
+        const width = Math.max(containerRect.width || baseWidth, baseWidth);
+        const height = Math.max(containerRect.height || baseHeight, baseHeight);
+        
+        // Mobile-optimized tree dimensions - increased spacing
         const nodeCount = this.countNodes(astData);
         const treeDepth = this.getTreeDepth(astData);
-        const maxNodesPerLevel = this.getMaxNodesPerLevel(astData);
         
-        // Dynamic sizing based on tree complexity
-        const nodeSpacing = isSmallMobile ? 400 : isMobile ? 500 : 600;
-        const levelSpacing = isSmallMobile ? 250 : isMobile ? 300 : 350;
+        const nodeSpacing = isSmallMobile ? 500 : isMobile ? 600 : 700;
+        const levelSpacing = isSmallMobile ? 300 : isMobile ? 350 : 400;
         
-        const dynamicWidth = Math.max(baseWidth, maxNodesPerLevel * nodeSpacing + 400);
-        const dynamicHeight = Math.max(baseHeight, treeDepth * levelSpacing + 300);
+        const dynamicWidth = Math.max(width, nodeCount * nodeSpacing);
+        const dynamicHeight = Math.max(height, treeDepth * levelSpacing);
         
         const svg = container.append('svg')
-            .attr('width', dynamicWidth)
-            .attr('height', dynamicHeight)
-            .style('background', 'linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%)')
-            .style('border-radius', '8px');
+            .attr('width', '100%')
+            .attr('height', '100%')
+            .attr('viewBox', `0 0 ${dynamicWidth} ${dynamicHeight}`)
+            .attr('preserveAspectRatio', 'xMidYMid meet')
+            .style('max-width', '100%')
+            .style('height', 'auto');
         
-        // Add zoom and pan functionality
-        const zoom = d3.zoom()
-            .scaleExtent([0.1, 3])
-            .on('zoom', (event) => {
-                g.attr('transform', event.transform);
-            });
-        
-        svg.call(zoom);
-        
-        // Create enhanced gradient definitions
+        // Create gradient definitions
         const defs = svg.append('defs');
         
-        // Enhanced node gradients with more types
+        // Node gradients
         const nodeGradients = {
-            'PROGRAM': ['#1e40af', '#3730a3'],
             'DECLARATION': ['#3b82f6', '#1d4ed8'],
             'ASSIGNMENT': ['#eab308', '#ca8a04'],
             'BINARY_OP': ['#8b5cf6', '#7c3aed'],
-            'UNARY_OP': ['#a855f7', '#9333ea'],
             'NUMBER': ['#10b981', '#059669'],
             'IDENTIFIER': ['#06b6d4', '#0891b2'],
             'STRING': ['#f97316', '#ea580c'],
             'COMPARISON': ['#ef4444', '#dc2626'],
-            'LOGICAL_OP': ['#f59e0b', '#d97706'],
-            'PRINTF': ['#f59e0b', '#d97706'],
-            'SCANF': ['#06b6d4', '#0891b2'],
-            'IF_STATEMENT': ['#8b5cf6', '#7c3aed'],
-            'WHILE_LOOP': ['#10b981', '#059669'],
-            'FOR_LOOP': ['#059669', '#047857'],
-            'BLOCK': ['#6b7280', '#4b5563'],
-            'FUNCTION_CALL': ['#f97316', '#ea580c'],
-            'RETURN': ['#ef4444', '#dc2626'],
-            'EXPRESSION': ['#64748b', '#475569']
+            'PRINTF': ['#f59e0b', '#d97706']
         };
         
         Object.entries(nodeGradients).forEach(([type, colors]) => {
@@ -490,145 +462,91 @@ class CompilerVisualizer {
             gradient.append('stop')
                 .attr('offset', '0%')
                 .attr('stop-color', colors[0])
-                .attr('stop-opacity', 0.9);
+                .attr('stop-opacity', 0.8);
             
             gradient.append('stop')
                 .attr('offset', '100%')
                 .attr('stop-color', colors[1])
-                .attr('stop-opacity', 0.7);
+                .attr('stop-opacity', 0.6);
         });
-        
-        // Add glow filter
-        const filter = defs.append('filter')
-            .attr('id', 'glow');
-        
-        filter.append('feGaussianBlur')
-            .attr('stdDeviation', '3')
-            .attr('result', 'coloredBlur');
-        
-        const feMerge = filter.append('feMerge');
-        feMerge.append('feMergeNode').attr('in', 'coloredBlur');
-        feMerge.append('feMergeNode').attr('in', 'SourceGraphic');
         
         // Convert AST to D3 hierarchy
         const root = d3.hierarchy(astData);
         
-        // Enhanced tree layout with better spacing
-        const margin = { top: 100, right: 100, bottom: 100, left: 100 };
+        // Mobile-responsive tree layout - increased margins and separation
+        const margin = isSmallMobile ? 80 : isMobile ? 100 : 150;
         const treeLayout = d3.tree()
-            .size([dynamicWidth - margin.left - margin.right, dynamicHeight - margin.top - margin.bottom])
+            .size([dynamicWidth - margin * 2, dynamicHeight - margin])
             .separation((a, b) => {
-                const aWidth = this.getEnhancedNodeWidth(a.data, isMobile, isSmallMobile);
-                const bWidth = this.getEnhancedNodeWidth(b.data, isMobile, isSmallMobile);
-                const minSeparation = (aWidth + bWidth) / 2 + (isSmallMobile ? 80 : isMobile ? 100 : 120);
-                const scaleFactor = isSmallMobile ? 100 : isMobile ? 120 : 140;
+                const aWidth = this.getNodeWidth(a.data, isMobile, isSmallMobile);
+                const bWidth = this.getNodeWidth(b.data, isMobile, isSmallMobile);
+                const minSeparation = (aWidth + bWidth) / 2 + (isSmallMobile ? 60 : isMobile ? 80 : 100);
+                const scaleFactor = isSmallMobile ? 120 : isMobile ? 150 : 180;
                 return a.parent === b.parent ? 
-                    Math.max(1.5, minSeparation / scaleFactor) : 
-                    Math.max(2, minSeparation / (scaleFactor * 0.8));
+                    Math.max(2, minSeparation / scaleFactor) : 
+                    Math.max(3, minSeparation / (scaleFactor * 0.8));
             });
         
         treeLayout(root);
         
         const g = svg.append('g')
-            .attr('transform', `translate(${margin.left}, ${margin.top})`);
+            .attr('transform', `translate(${margin}, ${margin / 2})`);
         
-        // Enhanced curved links with better styling
+        // Draw links with curved paths
         const links = g.selectAll('.link')
             .data(root.links())
             .enter().append('path')
             .attr('class', 'link')
-            .attr('d', d => {
-                const source = d.source;
-                const target = d.target;
-                return `M${source.x},${source.y + 40}
-                        C${source.x},${(source.y + target.y) / 2}
-                         ${target.x},${(source.y + target.y) / 2}
-                         ${target.x},${target.y - 40}`;
-            })
+            .attr('d', d3.linkVertical()
+                .x(d => d.x)
+                .y(d => d.y)
+            )
             .style('fill', 'none')
             .style('stroke', '#6366f1')
-            .style('stroke-width', isSmallMobile ? 3 : 4)
+            .style('stroke-width', isSmallMobile ? 2 : 3)
             .style('stroke-opacity', 0)
-            .style('filter', 'url(#glow)')
-            .style('stroke-dasharray', '5,5');
+            .style('filter', 'drop-shadow(0 2px 4px rgba(99, 102, 241, 0.3))');
         
-        // Enhanced nodes with more detailed information
+        // Draw nodes
         const nodes = g.selectAll('.node')
             .data(root.descendants())
             .enter().append('g')
             .attr('class', 'node')
             .attr('transform', d => `translate(${d.x}, ${d.y})`)
-            .style('opacity', 0)
-            .style('cursor', 'pointer');
+            .style('opacity', 0);
         
-        // Enhanced node dimensions
-        const nodeHeight = isSmallMobile ? 80 : isMobile ? 90 : 100;
-        const borderRadius = isSmallMobile ? 15 : 20;
+        // Much larger node dimensions for better visibility
+        const nodeHeight = isSmallMobile ? 120 : isMobile ? 140 : 160;
+        const borderRadius = isSmallMobile ? 25 : 30;
         
-        // Add node backgrounds with enhanced styling
+        // Add node backgrounds
         nodes.append('rect')
-            .attr('width', d => this.getEnhancedNodeWidth(d.data, isMobile, isSmallMobile))
+            .attr('width', d => this.getNodeWidth(d.data, isMobile, isSmallMobile))
             .attr('height', nodeHeight)
-            .attr('x', d => -this.getEnhancedNodeWidth(d.data, isMobile, isSmallMobile) / 2)
+            .attr('x', d => -this.getNodeWidth(d.data, isMobile, isSmallMobile) / 2)
             .attr('y', -nodeHeight / 2)
             .attr('rx', borderRadius)
             .attr('ry', borderRadius)
             .style('fill', d => `url(#gradient-${d.data.type})`)
-            .style('stroke', d => this.getEnhancedNodeColor(d.data.type))
-            .style('stroke-width', 2)
-            .style('filter', 'url(#glow)')
-            .style('transition', 'all 0.3s ease');
+            .style('stroke', d => this.getNodeColor(d.data.type))
+            .style('stroke-width', 3)
+            .style('filter', 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))');
         
-        // Enhanced text with better formatting
-        const fontSize = isSmallMobile ? '12px' : isMobile ? '14px' : '16px';
+        // Much larger font for better readability
+        const fontSize = isSmallMobile ? '32px' : isMobile ? '36px' : '40px';
         
-        // Main node text
         nodes.append('text')
-            .attr('dy', -5)
+            .attr('dy', 3)
             .attr('text-anchor', 'middle')
             .style('fill', 'white')
             .style('font-family', 'monospace')
             .style('font-size', fontSize)
             .style('font-weight', 'bold')
-            .style('text-shadow', '1px 1px 2px rgba(0,0,0,0.8)')
-            .text(d => this.getEnhancedNodeText(d.data, isMobile, isSmallMobile));
+            .style('text-shadow', '1px 1px 2px rgba(0,0,0,0.7)')
+            .text(d => this.getNodeText(d.data, isMobile, isSmallMobile));
         
-        // Additional node information
-        nodes.append('text')
-            .attr('dy', 15)
-            .attr('text-anchor', 'middle')
-            .style('fill', 'rgba(255,255,255,0.8)')
-            .style('font-family', 'monospace')
-            .style('font-size', isSmallMobile ? '10px' : '12px')
-            .style('text-shadow', '1px 1px 2px rgba(0,0,0,0.8)')
-            .text(d => this.getNodeSubtext(d.data));
-        
-        // Add node depth indicators
-        nodes.append('circle')
-            .attr('cx', d => this.getEnhancedNodeWidth(d.data, isMobile, isSmallMobile) / 2 - 10)
-            .attr('cy', -nodeHeight / 2 + 10)
-            .attr('r', 6)
-            .style('fill', d => this.getDepthColor(d.depth))
-            .style('stroke', 'white')
-            .style('stroke-width', 1);
-        
-        // Add node type icons
-        nodes.append('text')
-            .attr('x', d => -this.getEnhancedNodeWidth(d.data, isMobile, isSmallMobile) / 2 + 15)
-            .attr('y', -nodeHeight / 2 + 20)
-            .style('fill', 'white')
-            .style('font-size', '16px')
-            .style('font-family', 'Material Symbols Outlined')
-            .text(d => this.getNodeIcon(d.data.type));
-        
-        // Setup zoom controls
-        this.setupZoomControls(svg, zoom);
-        
-        // Animate everything with enhanced effects
-        this.animateEnhancedD3Tree(links, nodes);
-        
-        // Add interactive features
-        this.addNodeInteractivity(nodes);
+        // Animate everything
+        this.animateD3Tree(links, nodes);
     }
     
     getNodeText(node, isMobile = false, isSmallMobile = false) {
@@ -691,231 +609,53 @@ class CompilerVisualizer {
         return maxDepth;
     }
     
-    getEnhancedNodeColor(type) {
+    getNodeColor(type) {
         const colors = {
-            'PROGRAM': '#1e40af',
             'DECLARATION': '#3b82f6',
             'ASSIGNMENT': '#eab308',
             'BINARY_OP': '#8b5cf6',
-            'UNARY_OP': '#a855f7',
             'NUMBER': '#10b981',
             'IDENTIFIER': '#06b6d4',
             'STRING': '#f97316',
             'COMPARISON': '#ef4444',
-            'LOGICAL_OP': '#f59e0b',
-            'PRINTF': '#f59e0b',
-            'SCANF': '#06b6d4',
-            'IF_STATEMENT': '#8b5cf6',
-            'WHILE_LOOP': '#10b981',
-            'FOR_LOOP': '#059669',
-            'BLOCK': '#6b7280',
-            'FUNCTION_CALL': '#f97316',
-            'RETURN': '#ef4444',
-            'EXPRESSION': '#64748b'
+            'PRINTF': '#f59e0b'
         };
         return colors[type] || '#6b7280';
     }
     
-    getEnhancedNodeWidth(node, isMobile = false, isSmallMobile = false) {
-        const text = this.getEnhancedNodeText(node, isMobile, isSmallMobile);
-        const charWidth = isSmallMobile ? 8 : isMobile ? 9 : 10;
-        const padding = isSmallMobile ? 40 : isMobile ? 50 : 60;
-        const minWidth = isSmallMobile ? 120 : isMobile ? 140 : 160;
-        const maxWidth = isSmallMobile ? 200 : isMobile ? 240 : 280;
-        return Math.max(minWidth, Math.min(maxWidth, text.length * charWidth + padding));
-    }
+
     
-    getEnhancedNodeText(node, isMobile = false, isSmallMobile = false) {
-        if (node.value !== null && node.value !== undefined) {
-            if (typeof node.value === 'object' && node.value !== null) {
-                if (node.value.name && node.value.type) {
-                    return isSmallMobile ? `${node.value.type.substring(0, 3)} ${node.value.name}` : `${node.value.type} ${node.value.name}`;
-                }
-            } else {
-                if (node.type === 'ASSIGNMENT') {
-                    return `${node.value} =`;
-                } else if (node.type === 'BINARY_OP' || node.type === 'UNARY_OP') {
-                    return node.value;
-                } else {
-                    const text = `${node.value}`;
-                    return isSmallMobile && text.length > 10 ? text.substring(0, 10) + '...' : text;
-                }
-            }
-        }
-        return isSmallMobile && node.type.length > 8 ? node.type.substring(0, 8) : node.type;
-    }
-    
-    getNodeSubtext(node) {
-        if (node.line) return `Line ${node.line}`;
-        if (node.children && node.children.length > 0) return `${node.children.length} children`;
-        if (node.value !== null && node.value !== undefined && typeof node.value === 'object') {
-            if (node.value.scope) return `Scope: ${node.value.scope}`;
-        }
-        return '';
-    }
-    
-    getDepthColor(depth) {
-        const colors = ['#ef4444', '#f97316', '#eab308', '#10b981', '#06b6d4', '#3b82f6', '#8b5cf6', '#ec4899'];
-        return colors[depth % colors.length];
-    }
-    
-    getNodeIcon(type) {
-        const icons = {
-            'PROGRAM': 'code',
-            'DECLARATION': 'variable_add',
-            'ASSIGNMENT': 'assignment',
-            'BINARY_OP': 'calculate',
-            'UNARY_OP': 'functions',
-            'NUMBER': 'tag',
-            'IDENTIFIER': 'label',
-            'STRING': 'format_quote',
-            'COMPARISON': 'compare_arrows',
-            'LOGICAL_OP': 'logic',
-            'PRINTF': 'print',
-            'SCANF': 'input',
-            'IF_STATEMENT': 'fork_right',
-            'WHILE_LOOP': 'loop',
-            'FOR_LOOP': 'repeat',
-            'BLOCK': 'view_agenda',
-            'FUNCTION_CALL': 'call',
-            'RETURN': 'keyboard_return',
-            'EXPRESSION': 'function'
-        };
-        return icons[type] || 'circle';
-    }
-    
-    getMaxNodesPerLevel(node, level = 0, levelCounts = {}) {
-        if (!levelCounts[level]) levelCounts[level] = 0;
-        levelCounts[level]++;
-        
-        if (node.children) {
-            node.children.forEach(child => {
-                this.getMaxNodesPerLevel(child, level + 1, levelCounts);
-            });
-        }
-        
-        return Math.max(...Object.values(levelCounts));
-    }
-    
-    setupZoomControls(svg, zoom) {
-        document.getElementById('zoomIn')?.addEventListener('click', () => {
-            svg.transition().duration(300).call(
-                zoom.scaleBy, 1.5
-            );
-        });
-        
-        document.getElementById('zoomOut')?.addEventListener('click', () => {
-            svg.transition().duration(300).call(
-                zoom.scaleBy, 1 / 1.5
-            );
-        });
-        
-        document.getElementById('resetZoom')?.addEventListener('click', () => {
-            svg.transition().duration(500).call(
-                zoom.transform,
-                d3.zoomIdentity
-            );
-        });
-    }
-    
-    animateEnhancedD3Tree(links, nodes) {
-        // Animate links with staggered effect
+    animateD3Tree(links, nodes) {
+        // Animate links
         links.transition()
-            .duration(1200)
-            .delay((d, i) => i * 80)
+            .duration(1000)
+            .delay((d, i) => i * 100)
             .style('stroke-opacity', 0.8)
-            .style('stroke-dasharray', '0,0')
             .ease(d3.easeBackOut);
         
-        // Animate nodes with enhanced effects
+        // Animate nodes
         nodes.transition()
-            .duration(1000)
-            .delay((d, i) => d.depth * 200 + i * 50)
+            .duration(800)
+            .delay((d, i) => i * 150)
             .style('opacity', 1)
             .attr('transform', function(d) {
                 return `translate(${d.x}, ${d.y}) scale(1)`;
             })
             .ease(d3.easeBackOut);
         
-        // Add pulsing effect to root node
-        nodes.filter(d => d.depth === 0)
-            .select('rect')
-            .transition()
-            .duration(2000)
-            .delay(1500)
-            .style('stroke-width', 4)
-            .transition()
-            .duration(2000)
-            .style('stroke-width', 2)
-            .on('end', function repeat() {
-                d3.select(this)
-                    .transition()
-                    .duration(2000)
-                    .style('stroke-width', 4)
-                    .transition()
-                    .duration(2000)
-                    .style('stroke-width', 2)
-                    .on('end', repeat);
-            });
-    }
-    
-    addNodeInteractivity(nodes) {
+        // Add hover effects
         nodes.on('mouseenter', function(event, d) {
-            // Highlight node
             d3.select(this)
                 .transition()
                 .duration(200)
                 .attr('transform', `translate(${d.x}, ${d.y}) scale(1.1)`);
-            
-            // Show tooltip
-            const tooltip = d3.select('body').append('div')
-                .attr('class', 'ast-tooltip')
-                .style('position', 'absolute')
-                .style('background', 'rgba(0,0,0,0.9)')
-                .style('color', 'white')
-                .style('padding', '8px 12px')
-                .style('border-radius', '6px')
-                .style('font-size', '12px')
-                .style('font-family', 'monospace')
-                .style('pointer-events', 'none')
-                .style('z-index', '1000')
-                .style('opacity', 0);
-            
-            tooltip.html(`
-                <strong>${d.data.type}</strong><br/>
-                ${d.data.value ? `Value: ${JSON.stringify(d.data.value)}<br/>` : ''}
-                Depth: ${d.depth}<br/>
-                Children: ${d.children ? d.children.length : 0}
-            `)
-            .style('left', (event.pageX + 10) + 'px')
-            .style('top', (event.pageY - 10) + 'px')
-            .transition()
-            .duration(200)
-            .style('opacity', 1);
         })
         .on('mouseleave', function(event, d) {
-            // Reset node
             d3.select(this)
                 .transition()
                 .duration(200)
                 .attr('transform', `translate(${d.x}, ${d.y}) scale(1)`);
-            
-            // Remove tooltip
-            d3.selectAll('.ast-tooltip').remove();
-        })
-        .on('click', function(event, d) {
-            // Expand/collapse functionality could be added here
-            console.log('Node clicked:', d.data);
         });
-    }
-    
-    getNodeColor(type) {
-        return this.getEnhancedNodeColor(type);
-    }
-    
-    renderD3Tree(astData) {
-        // Fallback to enhanced version
-        this.renderEnhancedD3Tree(astData);
     }
     
     renderAnimatedTree(ast) {
