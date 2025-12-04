@@ -387,7 +387,7 @@ class CompilerVisualizer {
         this.visualizationContent.innerHTML = `
             <div class="flex flex-col gap-4">
                 <h3 class="text-lg font-bold text-zinc-100">Abstract Syntax Tree</h3>
-                <div class="rounded-lg border border-white/10 p-4 bg-gradient-to-br from-slate-900/50 to-slate-800/30" style="height: 500px;">
+                <div class="rounded-lg border border-white/10 p-4 bg-gradient-to-br from-slate-900/50 to-slate-800/30" style="height: 700px;">
                     <div id="d3TreeContainer" class="w-full h-full"></div>
                 </div>
             </div>
@@ -404,19 +404,19 @@ class CompilerVisualizer {
         const isMobile = window.innerWidth < 768;
         const isSmallMobile = window.innerWidth < 480;
         
-        // Responsive dimensions
-        const baseWidth = isSmallMobile ? 320 : isMobile ? 500 : 600;
-        const baseHeight = isSmallMobile ? 250 : isMobile ? 350 : 400;
+        // Responsive dimensions - made much larger
+        const baseWidth = isSmallMobile ? 500 : isMobile ? 800 : 1000;
+        const baseHeight = isSmallMobile ? 400 : isMobile ? 600 : 700;
         
         const width = Math.max(containerRect.width || baseWidth, baseWidth);
         const height = Math.max(containerRect.height || baseHeight, baseHeight);
         
-        // Mobile-optimized tree dimensions
+        // Mobile-optimized tree dimensions - increased spacing
         const nodeCount = this.countNodes(astData);
         const treeDepth = this.getTreeDepth(astData);
         
-        const nodeSpacing = isSmallMobile ? 80 : isMobile ? 100 : 120;
-        const levelSpacing = isSmallMobile ? 60 : isMobile ? 80 : 100;
+        const nodeSpacing = isSmallMobile ? 120 : isMobile ? 150 : 180;
+        const levelSpacing = isSmallMobile ? 100 : isMobile ? 120 : 140;
         
         const dynamicWidth = Math.max(width, nodeCount * nodeSpacing);
         const dynamicHeight = Math.max(height, treeDepth * levelSpacing);
@@ -464,18 +464,18 @@ class CompilerVisualizer {
         // Convert AST to D3 hierarchy
         const root = d3.hierarchy(astData);
         
-        // Mobile-responsive tree layout
-        const margin = isSmallMobile ? 40 : isMobile ? 60 : 100;
+        // Mobile-responsive tree layout - increased margins and separation
+        const margin = isSmallMobile ? 60 : isMobile ? 80 : 120;
         const treeLayout = d3.tree()
             .size([dynamicWidth - margin * 2, dynamicHeight - margin])
             .separation((a, b) => {
                 const aWidth = this.getNodeWidth(a.data, isMobile, isSmallMobile);
                 const bWidth = this.getNodeWidth(b.data, isMobile, isSmallMobile);
-                const minSeparation = (aWidth + bWidth) / 2 + (isSmallMobile ? 20 : isMobile ? 30 : 40);
-                const scaleFactor = isSmallMobile ? 60 : isMobile ? 80 : 100;
+                const minSeparation = (aWidth + bWidth) / 2 + (isSmallMobile ? 40 : isMobile ? 50 : 60);
+                const scaleFactor = isSmallMobile ? 80 : isMobile ? 100 : 120;
                 return a.parent === b.parent ? 
-                    Math.max(1.2, minSeparation / scaleFactor) : 
-                    Math.max(2, minSeparation / (scaleFactor * 0.8));
+                    Math.max(1.5, minSeparation / scaleFactor) : 
+                    Math.max(2.5, minSeparation / (scaleFactor * 0.8));
             });
         
         treeLayout(root);
@@ -506,9 +506,9 @@ class CompilerVisualizer {
             .attr('transform', d => `translate(${d.x}, ${d.y})`)
             .style('opacity', 0);
         
-        // Mobile-responsive node dimensions
-        const nodeHeight = isSmallMobile ? 24 : isMobile ? 28 : 30;
-        const borderRadius = isSmallMobile ? 4 : 6;
+        // Mobile-responsive node dimensions - made larger
+        const nodeHeight = isSmallMobile ? 32 : isMobile ? 36 : 40;
+        const borderRadius = isSmallMobile ? 6 : 8;
         
         // Add node backgrounds
         nodes.append('rect')
@@ -523,8 +523,8 @@ class CompilerVisualizer {
             .style('stroke-width', isSmallMobile ? 1 : 1.5)
             .style('filter', 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))');
         
-        // Mobile-responsive text
-        const fontSize = isSmallMobile ? '9px' : isMobile ? '10px' : '11px';
+        // Mobile-responsive text - increased font size
+        const fontSize = isSmallMobile ? '11px' : isMobile ? '12px' : '14px';
         
         nodes.append('text')
             .attr('dy', 3)
@@ -570,10 +570,10 @@ class CompilerVisualizer {
     
     getNodeWidth(node, isMobile = false, isSmallMobile = false) {
         const text = this.getNodeText(node, isMobile, isSmallMobile);
-        const charWidth = isSmallMobile ? 5 : isMobile ? 6 : 7;
-        const padding = isSmallMobile ? 12 : isMobile ? 14 : 16;
-        const minWidth = isSmallMobile ? 50 : isMobile ? 60 : 70;
-        const maxWidth = isSmallMobile ? 100 : isMobile ? 120 : 150;
+        const charWidth = isSmallMobile ? 7 : isMobile ? 8 : 9;
+        const padding = isSmallMobile ? 16 : isMobile ? 18 : 20;
+        const minWidth = isSmallMobile ? 70 : isMobile ? 80 : 90;
+        const maxWidth = isSmallMobile ? 140 : isMobile ? 160 : 200;
         return Math.max(minWidth, Math.min(maxWidth, text.length * charWidth + padding));
     }
     
