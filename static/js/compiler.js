@@ -395,14 +395,22 @@ class CompilerVisualizer {
     renderAST(ast) {
         this.visualizationContent.innerHTML = `
             <div class="flex flex-col gap-2 h-full">
-                <h3 class="text-lg font-bold text-zinc-100">Abstract Syntax Tree</h3>
-                <div class="rounded-lg border border-white/10 p-2 bg-gradient-to-br from-slate-900/50 to-slate-800/30 flex-1" style="min-height: 90vh;">
-                    <div id="d3TreeContainer" class="w-full h-full"></div>
+                <div class="flex items-center justify-between">
+                    <h3 class="text-lg font-bold text-zinc-100">Abstract Syntax Tree</h3>
+                    <div class="flex items-center gap-2">
+                        <button id="zoomOut" class="px-2 py-1 text-xs bg-gray-600 hover:bg-gray-500 text-white rounded transition-colors">Zoom Out</button>
+                        <button id="zoomReset" class="px-2 py-1 text-xs bg-blue-600 hover:bg-blue-500 text-white rounded transition-colors">Reset</button>
+                        <button id="zoomIn" class="px-2 py-1 text-xs bg-gray-600 hover:bg-gray-500 text-white rounded transition-colors">Zoom In</button>
+                    </div>
+                </div>
+                <div class="rounded-lg border border-white/10 p-2 bg-gradient-to-br from-slate-900/50 to-slate-800/30 flex-1 overflow-hidden" style="min-height: 90vh;">
+                    <div id="d3TreeContainer" class="w-full h-full overflow-auto"></div>
                 </div>
             </div>
         `;
         
         this.renderD3Tree(ast);
+        this.setupZoomControls();
     }
     
     renderD3Tree(astData) {
@@ -413,9 +421,13 @@ class CompilerVisualizer {
         const isMobile = window.innerWidth < 768;
         const isSmallMobile = window.innerWidth < 480;
         
-        // Responsive dimensions - extremely large for all devices
-        const baseWidth = isSmallMobile ? 1200 : isMobile ? 1800 : 2400;
-        const baseHeight = isSmallMobile ? 800 : isMobile ? 1200 : 1600;
+        // Responsive dimensions - extremely large for complex expressions
+        const nodeCount = this.countNodes(astData);
+        const treeDepth = this.getTreeDepth(astData);
+        const complexityFactor = Math.max(1, nodeCount / 5); // Scale based on complexity
+        
+        const baseWidth = isSmallMobile ? 1500 * complexityFactor : isMobile ? 2500 * complexityFactor : 3500 * complexityFactor;
+        const baseHeight = isSmallMobile ? 1000 * complexityFactor : isMobile ? 1500 * complexityFactor : 2000 * complexityFactor;
         
         const width = Math.max(containerRect.width || baseWidth, baseWidth);
         const height = Math.max(containerRect.height || baseHeight, baseHeight);
@@ -424,19 +436,22 @@ class CompilerVisualizer {
         const nodeCount = this.countNodes(astData);
         const treeDepth = this.getTreeDepth(astData);
         
-        const nodeSpacing = isSmallMobile ? 200 : isMobile ? 250 : 300;
-        const levelSpacing = isSmallMobile ? 150 : isMobile ? 180 : 220;
+        const nodeSpacing = isSmallMobile ? 250 * complexityFactor : isMobile ? 300 * complexityFactor : 400 * complexityFactor;
+        const levelSpacing = isSmallMobile ? 180 * complexityFactor : isMobile ? 220 * complexityFactor : 280 * complexityFactor;
         
         const dynamicWidth = Math.max(width, nodeCount * nodeSpacing);
         const dynamicHeight = Math.max(height, treeDepth * levelSpacing);
         
         const svg = container.append('svg')
-            .attr('width', '100%')
-            .attr('height', '100%')
+            .attr('width', dynamicWidth)
+            .attr('height', dynamicHeight)
             .attr('viewBox', `0 0 ${dynamicWidth} ${dynamicHeight}`)
-            .attr('preserveAspectRatio', 'xMidYMid meet')
-            .style('max-width', '100%')
-            .style('height', 'auto');
+            .style('display', 'block')
+            .style('margin', '0 auto');
+        
+        // Store initial dimensions for zoom
+        this.astDimensions = { width: dynamicWidth, height: dynamicHeight };
+        this.currentZoom = 1;
         
         // Create gradient definitions
         const defs = svg.append('defs');
@@ -654,6 +669,41 @@ class CompilerVisualizer {
                 .duration(200)
                 .attr('transform', `translate(${d.x}, ${d.y}) scale(1)`);
         });
+    }
+    
+    setupZoomControls() {
+        const zoomIn = document.getElementById('zoomIn');
+        const zoomOut = document.getElementById('zoomOut');
+        const zoomReset = document.getElementById('zoomReset');
+        const svg = d3.select('#d3TreeContainer svg');
+        
+        if (!svg.node()) return;
+        
+        zoomIn?.addEventListener('click', () => {
+            this.currentZoom = Math.min(this.currentZoom * 1.2, 3);
+            this.applyZoom(svg);
+        });
+        
+        zoomOut?.addEventListener('click', () => {
+            this.currentZoom = Math.max(this.currentZoom / 1.2, 0.3);
+            this.applyZoom(svg);
+        });
+        
+        zoomReset?.addEventListener('click', () => {
+            this.currentZoom = 1;
+            this.applyZoom(svg);
+        });
+    }
+    
+    applyZoom(svg) {
+        const { width, height } = this.astDimensions;
+        const newWidth = width * this.currentZoom;
+        const newHeight = height * this.currentZoom;
+        
+        svg.transition()
+            .duration(300)
+            .attr('width', newWidth)
+            .attr('height', newHeight);
     }
     
     renderAnimatedTree(ast) {
