@@ -15,13 +15,13 @@ class LexicalAnalyzer {
         const data = await response.json();
         
         if (data.success) {
-            this.renderTokens(data.tokens, data.symbol_table);
+            this.renderLexicalAnalysis(data.tokens, data.symbol_table, data.errors, data.warnings, data.statistics);
         } else {
             throw new Error(data.error);
         }
     }
 
-    renderTokens(tokens, symbolTable) {
+    renderLexicalAnalysis(tokens, symbolTable, errors = [], warnings = [], statistics = {}) {
         // Create symbol table with IDs for identifiers
         const identifiers = tokens.filter(token => token.type === 'IDENTIFIER');
         const uniqueIdentifiers = [...new Set(identifiers.map(token => token.value))];
@@ -32,7 +32,65 @@ class LexicalAnalyzer {
         }));
 
         this.visualizationContent.innerHTML = `
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div class="space-y-6">
+                <!-- Statistics Panel -->
+                <div class="bg-gradient-to-r from-indigo-900/20 to-purple-900/20 rounded-lg border border-indigo-500/20 p-4">
+                    <h3 class="text-lg font-bold text-indigo-200 mb-3">Lexical Analysis Statistics</h3>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                        <div class="text-center">
+                            <div class="text-2xl font-bold text-blue-400">${statistics.total_tokens || 0}</div>
+                            <div class="text-gray-400">Tokens</div>
+                        </div>
+                        <div class="text-center">
+                            <div class="text-2xl font-bold text-green-400">${statistics.unique_identifiers || 0}</div>
+                            <div class="text-gray-400">Identifiers</div>
+                        </div>
+                        <div class="text-center">
+                            <div class="text-2xl font-bold text-yellow-400">${statistics.skipped_comments || 0}</div>
+                            <div class="text-gray-400">Comments</div>
+                        </div>
+                        <div class="text-center">
+                            <div class="text-2xl font-bold text-red-400">${statistics.lexical_errors || 0}</div>
+                            <div class="text-gray-400">Errors</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Errors and Warnings -->
+                ${errors.length > 0 || warnings.length > 0 ? `
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        ${errors.length > 0 ? `
+                            <div class="bg-red-900/20 border border-red-500/30 rounded-lg p-4">
+                                <h4 class="font-bold text-red-300 mb-2 flex items-center">
+                                    <span class="w-2 h-2 bg-red-500 rounded-full mr-2"></span>
+                                    Lexical Errors (${errors.length})
+                                </h4>
+                                <div class="space-y-2 max-h-32 overflow-auto">
+                                    ${errors.map((error, index) => `
+                                        <div class="text-sm text-red-200 font-mono bg-red-900/30 p-2 rounded">
+                                            Line ${error.line}, Col ${error.column}: ${error.message}
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            </div>
+                        ` : ''}
+                        ${warnings.length > 0 ? `
+                            <div class="bg-yellow-900/20 border border-yellow-500/30 rounded-lg p-4">
+                                <h4 class="font-bold text-yellow-300 mb-2 flex items-center">
+                                    <span class="w-2 h-2 bg-yellow-500 rounded-full mr-2"></span>
+                                    Warnings (${warnings.length})
+                                </h4>
+                                <div class="space-y-2 max-h-32 overflow-auto">
+                                    ${warnings.map((warning, index) => `
+                                        <div class="text-sm text-yellow-200">${warning}</div>
+                                    `).join('')}
+                                </div>
+                            </div>
+                        ` : ''}
+                    </div>
+                ` : ''}
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <!-- Token Table -->
                 <div class="bg-gradient-to-br from-slate-900/50 to-slate-800/30 rounded-lg border border-white/10 p-4">
                     <h3 class="text-lg font-bold text-white mb-4 flex items-center">
@@ -91,6 +149,7 @@ class LexicalAnalyzer {
                     `}
                 </div>
             </div>
+        </div>
         `;
         
         this.populateTokenTable(tokens);
