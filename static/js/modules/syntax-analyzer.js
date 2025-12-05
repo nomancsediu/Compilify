@@ -42,19 +42,19 @@ class SyntaxAnalyzer {
         const isSmallMobile = window.innerWidth < 480;
         
         const nodeCount = this.countNodes(astData);
-        const treeDepth = this.getTreeDepth(astData);
         
-        // Fixed spacing - no shrinking based on complexity
-        const FIXED_NODE_SPACING = isSmallMobile ? 400 : isMobile ? 500 : 800;
-        const FIXED_LEVEL_SPACING = isSmallMobile ? 250 : isMobile ? 300 : 400;
+        // Horizontal layout - tree grows sideways, not deep
+        const NODE_WIDTH = isSmallMobile ? 200 : isMobile ? 250 : 350;
+        const NODE_HEIGHT = isSmallMobile ? 80 : isMobile ? 100 : 120;
+        const HORIZONTAL_SPACING = isSmallMobile ? 300 : isMobile ? 400 : 500;
+        const VERTICAL_SPACING = isSmallMobile ? 150 : isMobile ? 200 : 250;
         
-        // Calculate required dimensions based on tree structure
-        const requiredWidth = Math.max(2000, nodeCount * FIXED_NODE_SPACING);
-        const requiredHeight = Math.max(1000, treeDepth * FIXED_LEVEL_SPACING);
+        // Calculate canvas size - wide but not too deep
+        const canvasWidth = Math.max(1500, nodeCount * HORIZONTAL_SPACING);
+        const canvasHeight = Math.max(800, 6 * VERTICAL_SPACING); // Max 6 levels
         
-        // Always use calculated dimensions - never shrink
-        const dynamicWidth = requiredWidth;
-        const dynamicHeight = requiredHeight;
+        const dynamicWidth = canvasWidth;
+        const dynamicHeight = canvasHeight;
         
         const svg = container.append('svg')
             .attr('width', '100%')
@@ -96,27 +96,27 @@ class SyntaxAnalyzer {
         
         const root = d3.hierarchy(astData);
         
-        const margin = isSmallMobile ? 100 : isMobile ? 150 : 200;
+        const margin = 100;
+        // Horizontal tree layout - root on left, children spread right
         const treeLayout = d3.tree()
-            .size([dynamicWidth - margin * 2, dynamicHeight - margin])
+            .size([dynamicHeight - margin * 2, dynamicWidth - margin * 2])
             .separation((a, b) => {
-                // Fixed separation - never shrink
-                const FIXED_SEPARATION = isSmallMobile ? 1.5 : isMobile ? 2 : 3;
-                return a.parent === b.parent ? FIXED_SEPARATION : FIXED_SEPARATION * 1.2;
+                // Generous spacing to prevent overlap
+                return a.parent === b.parent ? 2 : 3;
             });
         
         treeLayout(root);
         
         const g = svg.append('g')
-            .attr('transform', `translate(${margin}, ${margin / 2})`);
+            .attr('transform', `translate(${margin}, ${margin})`);
         
         const links = g.selectAll('.link')
             .data(root.links())
             .enter().append('path')
             .attr('class', 'link')
-            .attr('d', d3.linkVertical()
-                .x(d => d.x)
-                .y(d => d.y)
+            .attr('d', d3.linkHorizontal()
+                .x(d => d.y)  // Swap x and y for horizontal layout
+                .y(d => d.x)
             )
             .style('fill', 'none')
             .style('stroke', '#6366f1')
@@ -128,41 +128,55 @@ class SyntaxAnalyzer {
             .data(root.descendants())
             .enter().append('g')
             .attr('class', 'node')
-            .attr('transform', d => `translate(${d.x}, ${d.y})`)
+            .attr('transform', d => `translate(${d.y}, ${d.x})`)  // Swap for horizontal
             .style('opacity', 0);
         
-        // Fixed node sizes - never shrink
-        const FIXED_NODE_HEIGHT = isSmallMobile ? 100 : isMobile ? 120 : 150;
-        const FIXED_BORDER_RADIUS = isSmallMobile ? 20 : isMobile ? 25 : 30;
-        
         nodes.append('rect')
-            .attr('width', d => this.getFixedNodeWidth(d.data, isMobile, isSmallMobile))
-            .attr('height', FIXED_NODE_HEIGHT)
-            .attr('x', d => -this.getFixedNodeWidth(d.data, isMobile, isSmallMobile) / 2)
-            .attr('y', -FIXED_NODE_HEIGHT / 2)
-            .attr('rx', FIXED_BORDER_RADIUS)
-            .attr('ry', FIXED_BORDER_RADIUS)
+            .attr('width', NODE_WIDTH)
+            .attr('height', NODE_HEIGHT)
+            .attr('x', -NODE_WIDTH / 2)
+            .attr('y', -NODE_HEIGHT / 2)
+            .attr('rx', 15)
+            .attr('ry', 15)
             .style('fill', d => `url(#gradient-${d.data.type})`)
             .style('stroke', d => this.getNodeColor(d.data.type))
             .style('stroke-width', 3)
             .style('filter', 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))');
         
-        // Fixed font sizes
-        const FIXED_FONT_SIZE = isSmallMobile ? '24px' : isMobile ? '28px' : '32px';
+        const FONT_SIZE = isSmallMobile ? '16px' : isMobile ? '18px' : '20px';
         
         nodes.append('text')
-            .attr('dy', 3)
+            .attr('dy', 5)
             .attr('text-anchor', 'middle')
             .style('fill', 'white')
             .style('font-family', 'monospace')
-            .style('font-size', FIXED_FONT_SIZE)
+            .style('font-size', FONT_SIZE)
             .style('font-weight', 'bold')
             .style('text-shadow', '1px 1px 2px rgba(0,0,0,0.7)')
-            .text(d => this.getNodeText(d.data, isMobile, isSmallMobile));
+            .text(d => this.getCompactNodeText(d.data));
         
         this.animateD3Tree(links, nodes);
     }
 
+    getCompactNodeText(node) {
+        if (node.value !== null && node.value !== undefined) {
+            if (typeof node.value === 'object' && node.value !== null) {
+                if (node.value.name && node.value.type) {
+                    return `${node.value.type} ${node.value.name}`;
+                }
+            } else {
+                if (node.type === 'ASSIGNMENT') {
+                    return `${node.value} =`;
+                } else if (node.type === 'BINARY_OP') {
+                    return node.value;
+                } else {
+                    return `${node.type}: ${node.value}`;
+                }
+            }
+        }
+        return node.type;
+    }
+    
     getNodeText(node, isMobile = false, isSmallMobile = false) {
         if (node.value !== null && node.value !== undefined) {
             if (typeof node.value === 'object' && node.value !== null) {
@@ -264,13 +278,13 @@ class SyntaxAnalyzer {
             d3.select(this)
                 .transition()
                 .duration(200)
-                .attr('transform', `translate(${d.x}, ${d.y}) scale(1.1)`);
+                .attr('transform', `translate(${d.y}, ${d.x}) scale(1.1)`);
         })
         .on('mouseleave', function(event, d) {
             d3.select(this)
                 .transition()
                 .duration(200)
-                .attr('transform', `translate(${d.x}, ${d.y}) scale(1)`);
+                .attr('transform', `translate(${d.y}, ${d.x}) scale(1)`);
         });
     }
 }
