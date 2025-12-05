@@ -25,8 +25,8 @@ class SyntaxAnalyzer {
         this.visualizationContent.innerHTML = `
             <div class="flex flex-col gap-2 h-full">
                 <h3 class="text-lg font-bold text-zinc-100">Abstract Syntax Tree</h3>
-                <div class="rounded-lg border border-white/10 p-2 bg-gradient-to-br from-slate-900/50 to-slate-800/30 flex-1" style="min-height: 90vh;">
-                    <div id="d3TreeContainer" class="w-full h-full"></div>
+                <div class="rounded-lg border border-white/10 p-2 bg-gradient-to-br from-slate-900/50 to-slate-800/30 flex-1 overflow-auto" style="min-height: 90vh;">
+                    <div id="d3TreeContainer" class="min-w-full min-h-full"></div>
                 </div>
             </div>
         `;
@@ -38,28 +38,23 @@ class SyntaxAnalyzer {
         const container = d3.select('#d3TreeContainer');
         container.selectAll('*').remove();
         
-        const containerRect = container.node().getBoundingClientRect();
         const isMobile = window.innerWidth < 768;
         const isSmallMobile = window.innerWidth < 480;
-        
-        // Much larger base dimensions for desktop
-        const baseWidth = isSmallMobile ? 1800 : isMobile ? 2400 : 5000;
-        const baseHeight = isSmallMobile ? 1200 : isMobile ? 1600 : 3000;
-        
-        const width = Math.max(containerRect.width || baseWidth, baseWidth);
-        const height = Math.max(containerRect.height || baseHeight, baseHeight);
         
         const nodeCount = this.countNodes(astData);
         const treeDepth = this.getTreeDepth(astData);
         
-        // Increased spacing for better visibility on desktop
-        const nodeSpacing = isSmallMobile ? 500 : isMobile ? 600 : 1000;
-        const levelSpacing = isSmallMobile ? 300 : isMobile ? 350 : 500;
+        // Fixed spacing - no shrinking based on complexity
+        const FIXED_NODE_SPACING = isSmallMobile ? 400 : isMobile ? 500 : 800;
+        const FIXED_LEVEL_SPACING = isSmallMobile ? 250 : isMobile ? 300 : 400;
         
-        // Dynamic sizing based on expression complexity
-        const complexityFactor = nodeCount > 10 ? 1.5 : 1;
-        const dynamicWidth = Math.max(width, nodeCount * nodeSpacing * complexityFactor);
-        const dynamicHeight = Math.max(height, treeDepth * levelSpacing * complexityFactor);
+        // Calculate required dimensions based on tree structure
+        const requiredWidth = Math.max(2000, nodeCount * FIXED_NODE_SPACING);
+        const requiredHeight = Math.max(1000, treeDepth * FIXED_LEVEL_SPACING);
+        
+        // Always use calculated dimensions - never shrink
+        const dynamicWidth = requiredWidth;
+        const dynamicHeight = requiredHeight;
         
         const svg = container.append('svg')
             .attr('width', '100%')
@@ -101,18 +96,13 @@ class SyntaxAnalyzer {
         
         const root = d3.hierarchy(astData);
         
-        const margin = isSmallMobile ? 80 : isMobile ? 100 : 200;
+        const margin = isSmallMobile ? 100 : isMobile ? 150 : 200;
         const treeLayout = d3.tree()
             .size([dynamicWidth - margin * 2, dynamicHeight - margin])
             .separation((a, b) => {
-                const aWidth = this.getNodeWidth(a.data, isMobile, isSmallMobile);
-                const bWidth = this.getNodeWidth(b.data, isMobile, isSmallMobile);
-                // Increased separation for desktop
-                const minSeparation = (aWidth + bWidth) / 2 + (isSmallMobile ? 60 : isMobile ? 80 : 150);
-                const scaleFactor = isSmallMobile ? 120 : isMobile ? 150 : 250;
-                return a.parent === b.parent ? 
-                    Math.max(2, minSeparation / scaleFactor) : 
-                    Math.max(3, minSeparation / (scaleFactor * 0.7));
+                // Fixed separation - never shrink
+                const FIXED_SEPARATION = isSmallMobile ? 1.5 : isMobile ? 2 : 3;
+                return a.parent === b.parent ? FIXED_SEPARATION : FIXED_SEPARATION * 1.2;
             });
         
         treeLayout(root);
@@ -141,31 +131,31 @@ class SyntaxAnalyzer {
             .attr('transform', d => `translate(${d.x}, ${d.y})`)
             .style('opacity', 0);
         
-        // Larger nodes for desktop
-        const nodeHeight = isSmallMobile ? 120 : isMobile ? 140 : 200;
-        const borderRadius = isSmallMobile ? 25 : isMobile ? 30 : 35;
+        // Fixed node sizes - never shrink
+        const FIXED_NODE_HEIGHT = isSmallMobile ? 100 : isMobile ? 120 : 150;
+        const FIXED_BORDER_RADIUS = isSmallMobile ? 20 : isMobile ? 25 : 30;
         
         nodes.append('rect')
-            .attr('width', d => this.getNodeWidth(d.data, isMobile, isSmallMobile))
-            .attr('height', nodeHeight)
-            .attr('x', d => -this.getNodeWidth(d.data, isMobile, isSmallMobile) / 2)
-            .attr('y', -nodeHeight / 2)
-            .attr('rx', borderRadius)
-            .attr('ry', borderRadius)
+            .attr('width', d => this.getFixedNodeWidth(d.data, isMobile, isSmallMobile))
+            .attr('height', FIXED_NODE_HEIGHT)
+            .attr('x', d => -this.getFixedNodeWidth(d.data, isMobile, isSmallMobile) / 2)
+            .attr('y', -FIXED_NODE_HEIGHT / 2)
+            .attr('rx', FIXED_BORDER_RADIUS)
+            .attr('ry', FIXED_BORDER_RADIUS)
             .style('fill', d => `url(#gradient-${d.data.type})`)
             .style('stroke', d => this.getNodeColor(d.data.type))
             .style('stroke-width', 3)
             .style('filter', 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))');
         
-        // Larger font for desktop
-        const fontSize = isSmallMobile ? '32px' : isMobile ? '36px' : '48px';
+        // Fixed font sizes
+        const FIXED_FONT_SIZE = isSmallMobile ? '24px' : isMobile ? '28px' : '32px';
         
         nodes.append('text')
             .attr('dy', 3)
             .attr('text-anchor', 'middle')
             .style('fill', 'white')
             .style('font-family', 'monospace')
-            .style('font-size', fontSize)
+            .style('font-size', FIXED_FONT_SIZE)
             .style('font-weight', 'bold')
             .style('text-shadow', '1px 1px 2px rgba(0,0,0,0.7)')
             .text(d => this.getNodeText(d.data, isMobile, isSmallMobile));
@@ -201,14 +191,20 @@ class SyntaxAnalyzer {
         return nodeType;
     }
     
-    getNodeWidth(node, isMobile = false, isSmallMobile = false) {
+    getFixedNodeWidth(node, isMobile = false, isSmallMobile = false) {
         const text = this.getNodeText(node, isMobile, isSmallMobile);
-        // Increased dimensions for desktop
-        const charWidth = isSmallMobile ? 30 : isMobile ? 35 : 50;
-        const padding = isSmallMobile ? 80 : isMobile ? 100 : 150;
-        const minWidth = isSmallMobile ? 300 : isMobile ? 350 : 500;
-        const maxWidth = isSmallMobile ? 600 : isMobile ? 700 : 1000;
-        return Math.max(minWidth, Math.min(maxWidth, text.length * charWidth + padding));
+        // Fixed dimensions - never shrink based on tree complexity
+        const FIXED_CHAR_WIDTH = isSmallMobile ? 20 : isMobile ? 25 : 30;
+        const FIXED_PADDING = isSmallMobile ? 60 : isMobile ? 80 : 100;
+        const FIXED_MIN_WIDTH = isSmallMobile ? 200 : isMobile ? 250 : 300;
+        const FIXED_MAX_WIDTH = isSmallMobile ? 400 : isMobile ? 500 : 600;
+        
+        return Math.max(FIXED_MIN_WIDTH, Math.min(FIXED_MAX_WIDTH, text.length * FIXED_CHAR_WIDTH + FIXED_PADDING));
+    }
+    
+    getNodeWidth(node, isMobile = false, isSmallMobile = false) {
+        // Fallback to fixed width
+        return this.getFixedNodeWidth(node, isMobile, isSmallMobile);
     }
     
     countNodes(node) {
