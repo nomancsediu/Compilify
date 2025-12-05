@@ -1,8 +1,8 @@
-# 🚀 Compilify - Lexical Analyzer
+# Compilify - Lexical Analyzer
 
 Educational lexical analysis tool built with pure web technologies.
 
-## 🛠️ Tech Stack
+## Tech Stack
 
 - **HTML5** - Structure and markup
 - **Tailwind CSS** - Styling and responsive design
@@ -10,7 +10,7 @@ Educational lexical analysis tool built with pure web technologies.
 - **Monaco Editor** - Code editor (VS Code engine)
 - **GSAP** - Smooth animations
 
-## 🔧 How It Works
+## How It Works
 
 1. **Input**: User types code in Monaco editor
 2. **Tokenization**: JavaScript regex patterns match tokens
@@ -18,7 +18,7 @@ Educational lexical analysis tool built with pure web technologies.
 4. **Visualization**: Color-coded tokens with animations
 5. **Symbol Table**: Identifiers extracted and displayed
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 Compilify/
@@ -29,7 +29,7 @@ Compilify/
 └── README.md
 ```
 
-## 🎯 Supported Tokens
+## Supported Tokens
 
 - **Keywords**: `int`, `float`, `char`, `if`, `else`, `while`, `for`
 - **Operators**: `+`, `-`, `*`, `/`, `=`
@@ -37,7 +37,7 @@ Compilify/
 - **Numbers**: Integers and floats
 - **Punctuation**: `(`, `)`, `;`
 
-## 🚀 Usage
+## Usage
 
 1. Open `index.html` in browser
 2. Type code in editor
@@ -48,7 +48,7 @@ Compilify/
 int x = 5 + (y * 2);
 ```
 
-## 🎨 Features
+## Features
 
 - Real-time tokenization
 - Color-coded token visualization
