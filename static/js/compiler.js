@@ -7,7 +7,6 @@ class CompilerVisualizer {
         this.editorManager = new EditorManager();
         this.uiManager = new UIManager(this.visualizationContent);
         this.lexicalAnalyzer = new LexicalAnalyzer(this.visualizationContent);
-        this.semanticAnalyzer = new SemanticAnalyzer(this.visualizationContent);
         
         this.init();
     }
@@ -39,14 +38,8 @@ class CompilerVisualizer {
         }
         
         try {
-            switch (this.currentPhase) {
-                case 'lexical':
-                    await this.lexicalAnalyzer.analyze(code);
-                    break;
-                case 'semantic':
-                    await this.semanticAnalyzer.analyze(code);
-                    break;
-            }
+            // Only lexical analysis
+            await this.lexicalAnalyzer.analyze(code);
         } catch (error) {
             this.uiManager.showError(error.message);
         }

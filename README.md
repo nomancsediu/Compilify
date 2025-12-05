@@ -1,11 +1,12 @@
-# Compilify - Interactive Compiler Visualizer
+# Compilify - Lexical Analyzer & Tokenizer
 
-An educational web application that visualizes the core phases of compiler design, built with Django and modern web technologies.
+An educational web application that visualizes lexical analysis and tokenization, built with Django and modern web technologies.
 
 ## Features
 
 - **Lexical Analysis**: Interactive tokenization with color-coded visualization
-- **Semantic Analysis**: Symbol table management and error detection
+- **Token Highlighting**: Real-time token identification and classification
+- **Symbol Table**: Automatic symbol table generation
 - **Real-time Updates**: Code changes are instantly reflected in visualizations
 - **Responsive Design**: Works seamlessly on desktop and mobile devices
 
@@ -17,19 +18,18 @@ An educational web application that visualizes the core phases of compiler desig
 - **Visualization**: GSAP for animations
 - **Editor**: Monaco Editor for code input
 
-## Core Compiler Phases
+## Core Features
 
-### 1. Lexical Analysis (Tokenization)
+### Lexical Analysis (Tokenization)
 - Breaks source code into tokens
-- Color-coded token visualization
+- Color-coded token visualization by type:
+  - **Keywords** (int, float, if, while, etc.)
+  - **Identifiers** (variable names)
+  - **Literals** (numbers, strings)
+  - **Operators** (+, -, *, /, =, etc.)
+  - **Punctuation** (parentheses, semicolons, etc.)
 - Symbol table generation
-- Real-time token highlighting
-
-### 2. Semantic Analysis
-- Type checking and validation
-- Symbol table management
-- Variable usage tracking
-- Semantic error reporting
+- Real-time token highlighting with animations
 
 ## Getting Started
 
@@ -66,26 +66,28 @@ python manage.py runserver
 ## Usage
 
 1. **Write Code**: Enter C-like code in the Monaco editor
-2. **Select Phase**: Click on either of the two compiler phases
-3. **View Visualization**: See real-time visualization of the selected phase
-4. **Interactive Elements**: Hover over tokens for additional information
+2. **View Tokens**: See real-time tokenization and color-coded visualization
+3. **Interactive Elements**: Hover over tokens for enhanced visual feedback
+4. **Symbol Table**: View automatically generated symbol table
 
 ## Supported Language Features
 
 - Variable declarations (`int`, `float`, `char`)
 - Arithmetic expressions (`+`, `-`, `*`, `/`)
-- Assignment statements
+- Assignment statements (`=`)
 - Comparison operations (`==`, `!=`, `<`, `>`, `<=`, `>=`)
-- Control structures (`if`, `while`)
-- Function calls (`printf`)
+- Control structure keywords (`if`, `else`, `while`, `for`)
+- Function calls (`printf`, `scanf`)
+- Literals (numbers, strings)
+- Punctuation and delimiters
 
 ## Educational Value
 
 This project is designed for:
-- **Computer Science Students**: Understanding compiler fundamentals
-- **Programming Language Courses**: Visual learning of compilation process
-- **Self-learners**: Interactive exploration of compiler design
-- **Educators**: Teaching tool for compiler construction courses
+- **Computer Science Students**: Understanding lexical analysis fundamentals
+- **Programming Language Courses**: Visual learning of tokenization process
+- **Self-learners**: Interactive exploration of how compilers read code
+- **Educators**: Teaching tool for compiler construction basics
 
 ## Project Structure
 
@@ -94,7 +96,6 @@ Compilify/
 ├── compilify/
 │   ├── compiler/
 │   │   ├── lexer.py          # Tokenization logic
-│   │   ├── semantic_analyzer.py  # Semantic analysis
 │   │   ├── views.py          # API endpoints
 │   │   └── urls.py           # URL routing
 │   └── settings.py
@@ -103,8 +104,7 @@ Compilify/
 │       ├── modules/
 │       │   ├── editor-manager.js
 │       │   ├── ui-manager.js
-│       │   ├── lexical-analyzer.js
-│       │   └── semantic-analyzer.js
+│       │   └── lexical-analyzer.js
 │       └── compiler.js       # Main coordinator
 ├── templates/
 │   └── index.html           # Main interface
@@ -113,8 +113,7 @@ Compilify/
 
 ## API Endpoints
 
-- `POST /api/lexical/` - Lexical analysis
-- `POST /api/semantic/` - Semantic analysis
+- `POST /api/lexical/` - Lexical analysis and tokenization
 
 ## Contributing
 
