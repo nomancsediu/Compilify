@@ -130,6 +130,13 @@ class LexicalAnalyzer {
     getTokenCategory(tokenType) {
         const categories = {
             'NUMBER': 'Number',
+            'INT': 'Keyword',
+            'FLOAT': 'Keyword',
+            'CHAR': 'Keyword',
+            'IF': 'Keyword',
+            'ELSE': 'Keyword',
+            'WHILE': 'Keyword',
+            'FOR': 'Keyword',
             'IDENTIFIER': 'Variable',
             'ASSIGN': 'Assignment',
             'PLUS': 'Operator',
@@ -147,6 +154,7 @@ class LexicalAnalyzer {
     getCategoryColor(category) {
         const colors = {
             'Number': 'bg-emerald-500/20 text-emerald-300 border-2 border-emerald-400/50 shadow-emerald-400/20',
+            'Keyword': 'bg-violet-500/20 text-violet-300 border-2 border-violet-400/50 shadow-violet-400/20',
             'Operator': 'bg-orange-500/20 text-orange-300 border-2 border-orange-400/50 shadow-orange-400/20',
             'Variable': 'bg-blue-500/20 text-blue-300 border-2 border-blue-400/50 shadow-blue-400/20',
             'Assignment': 'bg-pink-500/20 text-pink-300 border-2 border-pink-400/50 shadow-pink-400/20',
@@ -180,6 +188,7 @@ class LexicalAnalyzer {
     getCategoryBadgeColor(category) {
         const colors = {
             'Number': 'bg-emerald-600/30 text-emerald-300',
+            'Keyword': 'bg-violet-600/30 text-violet-300',
             'Operator': 'bg-orange-600/30 text-orange-300',
             'Variable': 'bg-blue-600/30 text-blue-300',
             'Assignment': 'bg-pink-600/30 text-pink-300',

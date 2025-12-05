@@ -17,6 +17,13 @@ class Token:
 class Lexer:
     TOKEN_PATTERNS = [
         ('NUMBER', r'\d+(\.\d*)?'),
+        ('INT', r'\bint\b'),
+        ('FLOAT', r'\bfloat\b'),
+        ('CHAR', r'\bchar\b'),
+        ('IF', r'\bif\b'),
+        ('ELSE', r'\belse\b'),
+        ('WHILE', r'\bwhile\b'),
+        ('FOR', r'\bfor\b'),
         ('IDENTIFIER', r'[a-zA-Z_][a-zA-Z0-9_]*'),
         ('ASSIGN', r'='),
         ('PLUS', r'\+'),
