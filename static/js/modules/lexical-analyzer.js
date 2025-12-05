@@ -22,112 +22,188 @@ class LexicalAnalyzer {
     }
 
     renderTokens(tokens, symbolTable) {
+        // Create symbol table with IDs for identifiers
+        const identifiers = tokens.filter(token => token.type === 'IDENTIFIER');
+        const uniqueIdentifiers = [...new Set(identifiers.map(token => token.value))];
+        const symbolTableWithIds = uniqueIdentifiers.map((name, index) => ({
+            id: index + 1,
+            name: name,
+            type: 'IDENTIFIER'
+        }));
+
         this.visualizationContent.innerHTML = `
-            <div class="flex flex-wrap gap-1 lg:gap-2" id="tokensContainer">
-            </div>
-            ${symbolTable && Object.keys(symbolTable.symbols).length > 0 ? `
-                <div class="mt-6 pt-4 border-t border-border-dark">
-                    <h4 class="text-sm font-semibold text-gray-400 mb-3 uppercase tracking-wider">Symbol Table</h4>
-                    <div class="flex flex-wrap gap-2">
-                        ${Object.entries(symbolTable.symbols).map(([name, info]) => 
-                            `<div class="px-3 py-1 rounded-full bg-surface-dark border border-token-identifier/30 text-token-identifier text-sm font-mono">${name}</div>`
-                        ).join('')}
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- Token Table -->
+                <div class="bg-gradient-to-br from-slate-900/50 to-slate-800/30 rounded-lg border border-white/10 p-4">
+                    <h3 class="text-lg font-bold text-white mb-4 flex items-center">
+                        <span class="w-3 h-3 bg-blue-500 rounded-full mr-2"></span>
+                        Token Table
+                    </h3>
+                    <div class="overflow-auto max-h-96">
+                        <table class="w-full text-sm">
+                            <thead>
+                                <tr class="border-b border-gray-600">
+                                    <th class="text-left py-2 px-3 text-gray-300 font-semibold">#</th>
+                                    <th class="text-left py-2 px-3 text-gray-300 font-semibold">Token</th>
+                                    <th class="text-left py-2 px-3 text-gray-300 font-semibold">Lexeme</th>
+                                    <th class="text-left py-2 px-3 text-gray-300 font-semibold">Category</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tokenTableBody">
+                                <!-- Tokens will be inserted here -->
+                            </tbody>
+                        </table>
                     </div>
                 </div>
-            ` : ''}
+
+                <!-- Symbol Table -->
+                <div class="bg-gradient-to-br from-green-900/20 to-green-800/10 rounded-lg border border-green-500/20 p-4">
+                    <h3 class="text-lg font-bold text-green-200 mb-4 flex items-center">
+                        <span class="w-3 h-3 bg-green-500 rounded-full mr-2"></span>
+                        Symbol Table
+                    </h3>
+                    ${symbolTableWithIds.length > 0 ? `
+                        <div class="overflow-auto max-h-96">
+                            <table class="w-full text-sm">
+                                <thead>
+                                    <tr class="border-b border-green-600/30">
+                                        <th class="text-left py-2 px-3 text-green-300 font-semibold">ID</th>
+                                        <th class="text-left py-2 px-3 text-green-300 font-semibold">Symbol</th>
+                                        <th class="text-left py-2 px-3 text-green-300 font-semibold">Type</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${symbolTableWithIds.map((symbol, index) => `
+                                        <tr id="symbol-${index}" class="border-b border-green-600/10 hover:bg-green-500/10 transition-colors">
+                                            <td class="py-2 px-3 text-green-400 font-mono">${symbol.id}</td>
+                                            <td class="py-2 px-3 text-green-200 font-mono font-bold">${symbol.name}</td>
+                                            <td class="py-2 px-3 text-green-300 text-xs">${symbol.type}</td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    ` : `
+                        <div class="text-center py-8 text-green-400/60">
+                            <div class="text-2xl mb-2">📝</div>
+                            <p>No identifiers found</p>
+                        </div>
+                    `}
+                </div>
+            </div>
         `;
         
-        const container = document.getElementById('tokensContainer');
-        
-        tokens.forEach((token, index) => {
-            const tokenElement = document.createElement('div');
-            const tokenTypeColors = {
-                'INT': 'border-token-type/50 text-token-type',
-                'FLOAT': 'border-token-type/50 text-token-type',
-                'CHAR': 'border-token-type/50 text-token-type',
-                'IF': 'border-token-keyword/50 text-token-keyword',
-                'ELSE': 'border-token-keyword/50 text-token-keyword',
-                'WHILE': 'border-token-keyword/50 text-token-keyword',
-                'PRINTF': 'border-token-keyword/50 text-token-keyword',
-                'IDENTIFIER': 'border-token-identifier/50 text-token-identifier',
-                'NUMBER': 'border-token-literal/50 text-token-literal',
-                'STRING': 'border-token-literal/50 text-token-literal',
-                'ASSIGN': 'border-token-operator/50 text-token-operator',
-                'PLUS': 'border-token-operator/50 text-token-operator',
-                'MINUS': 'border-token-operator/50 text-token-operator',
-                'MULTIPLY': 'border-token-operator/50 text-token-operator',
-                'DIVIDE': 'border-token-operator/50 text-token-operator',
-                'LPAREN': 'border-token-punctuation/50 text-token-punctuation',
-                'RPAREN': 'border-token-punctuation/50 text-token-punctuation',
-                'LBRACE': 'border-token-punctuation/50 text-token-punctuation',
-                'RBRACE': 'border-token-punctuation/50 text-token-punctuation',
-                'SEMICOLON': 'border-token-punctuation/50 text-token-punctuation'
-            };
-            
-            const colorClass = tokenTypeColors[token.type] || 'border-gray-600 text-gray-400';
-            tokenElement.className = `flex items-center bg-surface-dark border rounded-full px-2 lg:px-3 py-1 text-xs lg:text-sm font-mono cursor-pointer hover:bg-vibrant-blue/20 hover:border-vibrant-blue transition-colors duration-200 ${colorClass}`;
-            tokenElement.innerHTML = `
-                <span class="mr-1 lg:mr-2 text-xs opacity-70">${token.type}</span>
-                <span>${token.value}</span>
-            `;
-            tokenElement.id = `token-${index}`;
-            
-            gsap.set(tokenElement, { 
-                opacity: 0, 
-                y: -30, 
-                scale: 0.5, 
-                rotation: -10 
-            });
-            
-            container.appendChild(tokenElement);
-        });
-        
-        this.animateTokens(tokens);
+        this.populateTokenTable(tokens);
+        this.animateTokenTable(tokens, symbolTableWithIds);
     }
 
-    animateTokens(tokens) {
-        const tl = gsap.timeline();
-        tokens.forEach((token, index) => {
-            tl.to(`#token-${index}`, {
-                opacity: 1,
-                y: 0,
-                scale: 1,
-                rotation: 0,
-                duration: 0.5,
-                ease: "back.out(1.7)"
-            }, index * 0.1);
-            
-            tl.to(`#token-${index}`, {
-                y: -5,
-                duration: 0.2,
-                ease: "power2.out"
-            }, index * 0.1 + 0.3);
-            
-            tl.to(`#token-${index}`, {
-                y: 0,
-                duration: 0.2,
-                ease: "bounce.out"
-            }, index * 0.1 + 0.5);
-        });
+    populateTokenTable(tokens) {
+        const tbody = document.getElementById('tokenTableBody');
         
         tokens.forEach((token, index) => {
-            const element = document.getElementById(`token-${index}`);
-            element.addEventListener('mouseenter', () => {
-                gsap.to(element, { 
-                    scale: 1.1, 
-                    y: -3,
-                    duration: 0.2, 
-                    ease: "power2.out" 
-                });
-            });
-            element.addEventListener('mouseleave', () => {
-                gsap.to(element, { 
-                    scale: 1, 
-                    y: 0,
-                    duration: 0.2, 
-                    ease: "power2.out" 
-                });
-            });
+            const category = this.getTokenCategory(token.type);
+            const categoryColor = this.getCategoryColor(category);
+            
+            const row = document.createElement('tr');
+            row.id = `token-row-${index}`;
+            row.className = 'border-b border-gray-700/30 hover:bg-white/5 transition-colors';
+            row.innerHTML = `
+                <td class="py-2 px-3 text-gray-400 font-mono text-xs">${index + 1}</td>
+                <td class="py-2 px-3 text-white font-mono font-bold">${token.value}</td>
+                <td class="py-2 px-3 text-gray-300 font-mono">${token.type}</td>
+                <td class="py-2 px-3">
+                    <span class="px-2 py-1 rounded-full text-xs font-medium ${categoryColor}">
+                        ${category}
+                    </span>
+                </td>
+            `;
+            
+            // Set initial state for animation
+            gsap.set(row, { opacity: 0, x: -50 });
+            tbody.appendChild(row);
+        });
+    }
+
+    getTokenCategory(tokenType) {
+        const categories = {
+            // Keywords
+            'INT': 'Keyword',
+            'FLOAT': 'Keyword', 
+            'CHAR': 'Keyword',
+            'IF': 'Keyword',
+            'ELSE': 'Keyword',
+            'WHILE': 'Keyword',
+            'FOR': 'Keyword',
+            'RETURN': 'Keyword',
+            'PRINTF': 'Keyword',
+            'SCANF': 'Keyword',
+            
+            // Operators
+            'ASSIGN': 'Operator',
+            'PLUS': 'Operator',
+            'MINUS': 'Operator', 
+            'MULTIPLY': 'Operator',
+            'DIVIDE': 'Operator',
+            'EQ': 'Operator',
+            'NE': 'Operator',
+            'LT': 'Operator',
+            'LE': 'Operator',
+            'GT': 'Operator',
+            'GE': 'Operator',
+            
+            // Literals
+            'NUMBER': 'Literal',
+            'STRING': 'Literal',
+            
+            // Identifiers
+            'IDENTIFIER': 'Identifier',
+            
+            // Punctuation
+            'LPAREN': 'Punctuation',
+            'RPAREN': 'Punctuation',
+            'LBRACE': 'Punctuation',
+            'RBRACE': 'Punctuation',
+            'SEMICOLON': 'Punctuation',
+            'COMMA': 'Punctuation'
+        };
+        
+        return categories[tokenType] || 'Unknown';
+    }
+
+    getCategoryColor(category) {
+        const colors = {
+            'Keyword': 'bg-purple-500/20 text-purple-300 border border-purple-500/30',
+            'Operator': 'bg-orange-500/20 text-orange-300 border border-orange-500/30',
+            'Literal': 'bg-green-500/20 text-green-300 border border-green-500/30',
+            'Identifier': 'bg-blue-500/20 text-blue-300 border border-blue-500/30',
+            'Punctuation': 'bg-gray-500/20 text-gray-300 border border-gray-500/30',
+            'Unknown': 'bg-red-500/20 text-red-300 border border-red-500/30'
+        };
+        
+        return colors[category] || colors['Unknown'];
+    }
+
+    animateTokenTable(tokens, symbolTable) {
+        const tl = gsap.timeline();
+        
+        // Animate token table rows
+        tokens.forEach((token, index) => {
+            tl.to(`#token-row-${index}`, {
+                opacity: 1,
+                x: 0,
+                duration: 0.3,
+                ease: "power2.out"
+            }, index * 0.05);
+        });
+        
+        // Animate symbol table rows
+        symbolTable.forEach((symbol, index) => {
+            tl.to(`#symbol-${index}`, {
+                opacity: 1,
+                x: 0,
+                duration: 0.3,
+                ease: "power2.out"
+            }, 0.5 + index * 0.1);
         });
     }
 }
