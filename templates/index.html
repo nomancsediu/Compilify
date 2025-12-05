@@ -95,6 +95,13 @@
     </div>
     
     {% load static %}
+    <!-- Load modules first -->
+    <script src="{% static 'js/modules/editor-manager.js' %}"></script>
+    <script src="{% static 'js/modules/ui-manager.js' %}"></script>
+    <script src="{% static 'js/modules/lexical-analyzer.js' %}"></script>
+    <script src="{% static 'js/modules/syntax-analyzer.js' %}"></script>
+    <script src="{% static 'js/modules/semantic-analyzer.js' %}"></script>
+    <!-- Load main app -->
     <script src="{% static 'js/compiler.js' %}"></script>
 </body>
 </html>
