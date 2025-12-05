@@ -29,29 +29,7 @@ def lexical_analysis(request):
             'error': str(e)
         })
 
-@csrf_exempt
-@api_view(['POST'])
-def syntax_analysis(request):
-    try:
-        import json
-        if hasattr(request, 'data'):
-            code = request.data.get('code', '')
-        else:
-            data = json.loads(request.body)
-            code = data.get('code', '')
-            
-        parser = Parser()
-        ast = parser.parse(code)
-        
-        return Response({
-            'success': True,
-            'ast': ast
-        })
-    except Exception as e:
-        return Response({
-            'success': False,
-            'error': str(e)
-        })
+
 
 
 

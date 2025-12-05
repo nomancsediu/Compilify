@@ -5,7 +5,6 @@ An educational web application that visualizes the core phases of compiler desig
 ## Features
 
 - **Lexical Analysis**: Interactive tokenization with color-coded visualization
-- **Syntax Analysis**: Real-time Abstract Syntax Tree (AST) generation and display
 - **Semantic Analysis**: Symbol table management and error detection
 - **Real-time Updates**: Code changes are instantly reflected in visualizations
 - **Responsive Design**: Works seamlessly on desktop and mobile devices
@@ -14,8 +13,8 @@ An educational web application that visualizes the core phases of compiler desig
 
 - **Backend**: Python Django with Django REST Framework
 - **Frontend**: HTML5, Tailwind CSS, Vanilla JavaScript
-- **Parsing**: Custom lexer and parser implementation
-- **Visualization**: D3.js for AST rendering, GSAP for animations
+- **Parsing**: Custom lexer implementation
+- **Visualization**: GSAP for animations
 - **Editor**: Monaco Editor for code input
 
 ## Core Compiler Phases
@@ -26,13 +25,7 @@ An educational web application that visualizes the core phases of compiler desig
 - Symbol table generation
 - Real-time token highlighting
 
-### 2. Syntax Analysis (Parsing)
-- Generates Abstract Syntax Tree (AST)
-- Interactive tree visualization with D3.js
-- Grammar rule validation
-- Parse error detection
-
-### 3. Semantic Analysis
+### 2. Semantic Analysis
 - Type checking and validation
 - Symbol table management
 - Variable usage tracking
@@ -73,9 +66,9 @@ python manage.py runserver
 ## Usage
 
 1. **Write Code**: Enter C-like code in the Monaco editor
-2. **Select Phase**: Click on any of the three compiler phases
+2. **Select Phase**: Click on either of the two compiler phases
 3. **View Visualization**: See real-time visualization of the selected phase
-4. **Interactive Elements**: Hover over tokens, AST nodes for additional information
+4. **Interactive Elements**: Hover over tokens for additional information
 
 ## Supported Language Features
 
@@ -101,14 +94,18 @@ Compilify/
 ├── compilify/
 │   ├── compiler/
 │   │   ├── lexer.py          # Tokenization logic
-│   │   ├── parser.py         # AST generation
 │   │   ├── semantic_analyzer.py  # Semantic analysis
 │   │   ├── views.py          # API endpoints
 │   │   └── urls.py           # URL routing
 │   └── settings.py
 ├── static/
 │   └── js/
-│       └── compiler.js       # Frontend visualization
+│       ├── modules/
+│       │   ├── editor-manager.js
+│       │   ├── ui-manager.js
+│       │   ├── lexical-analyzer.js
+│       │   └── semantic-analyzer.js
+│       └── compiler.js       # Main coordinator
 ├── templates/
 │   └── index.html           # Main interface
 └── requirements.txt
@@ -117,7 +114,6 @@ Compilify/
 ## API Endpoints
 
 - `POST /api/lexical/` - Lexical analysis
-- `POST /api/syntax/` - Syntax analysis  
 - `POST /api/semantic/` - Semantic analysis
 
 ## Contributing
