@@ -23,13 +23,32 @@ class LexicalAnalyzer {
 
     renderTokens(tokens) {
         this.visualizationContent.innerHTML = `
-            <div class="space-y-4">
-                <h3 class="text-xl font-bold text-white mb-4">🔍 Lexical Analysis Result</h3>
-                <div class="flex flex-wrap gap-3" id="tokensContainer"></div>
+            <div class="space-y-6">
+                <div>
+                    <h3 class="text-xl font-bold text-white mb-4">🔍 Lexical Analysis Result</h3>
+                    <div class="flex flex-wrap gap-3" id="tokensContainer"></div>
+                </div>
+                <div>
+                    <h3 class="text-xl font-bold text-white mb-4">📊 Symbol Table</h3>
+                    <div class="overflow-x-auto">
+                        <table class="w-full bg-gray-800/50 rounded-lg border border-gray-600">
+                            <thead>
+                                <tr class="bg-gray-700/50">
+                                    <th class="px-4 py-3 text-left text-sm font-semibold text-gray-200 border-b border-gray-600">Lexeme</th>
+                                    <th class="px-4 py-3 text-left text-sm font-semibold text-gray-200 border-b border-gray-600">Token Type</th>
+                                    <th class="px-4 py-3 text-left text-sm font-semibold text-gray-200 border-b border-gray-600">Category</th>
+                                </tr>
+                            </thead>
+                            <tbody id="symbolTableBody">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
         `;
         
         const container = document.getElementById('tokensContainer');
+        const symbolTableBody = document.getElementById('symbolTableBody');
         
         tokens.forEach((token, index) => {
             const tokenElement = document.createElement('div');
@@ -47,6 +66,20 @@ class LexicalAnalyzer {
             
             gsap.set(tokenElement, { opacity: 0, scale: 0.5, y: 20 });
             container.appendChild(tokenElement);
+            
+            // Add row to symbol table
+            const row = document.createElement('tr');
+            row.className = 'border-b border-gray-700/50 hover:bg-gray-700/30 transition-colors';
+            row.innerHTML = `
+                <td class="px-4 py-3 text-sm font-mono text-gray-300">${token.value}</td>
+                <td class="px-4 py-3 text-sm font-mono text-gray-300">${token.type}</td>
+                <td class="px-4 py-3 text-sm text-gray-300">
+                    <span class="inline-block px-2 py-1 rounded text-xs ${this.getCategoryBadgeColor(category)}">
+                        ${category}
+                    </span>
+                </td>
+            `;
+            symbolTableBody.appendChild(row);
         });
         
         this.animateTokens(tokens);
@@ -104,6 +137,19 @@ class LexicalAnalyzer {
         return value;
     }
 
+    getCategoryBadgeColor(category) {
+        const colors = {
+            'Number': 'bg-emerald-600/30 text-emerald-300',
+            'Operator': 'bg-orange-600/30 text-orange-300',
+            'Variable': 'bg-blue-600/30 text-blue-300',
+            'Assignment': 'bg-pink-600/30 text-pink-300',
+            'Parenthesis': 'bg-purple-600/30 text-purple-300',
+            'Delimiter': 'bg-gray-600/30 text-gray-300',
+            'Unknown': 'bg-red-600/30 text-red-300'
+        };
+        return colors[category] || colors['Unknown'];
+    }
+
     animateTokens(tokens) {
         const tl = gsap.timeline();
         
@@ -116,5 +162,14 @@ class LexicalAnalyzer {
                 ease: "back.out(1.7)"
             }, index * 0.15);
         });
+        
+        // Animate symbol table rows
+        tl.from('#symbolTableBody tr', {
+            opacity: 0,
+            x: -20,
+            duration: 0.3,
+            stagger: 0.05,
+            ease: "power2.out"
+        }, "-=0.5");
     }
 }
