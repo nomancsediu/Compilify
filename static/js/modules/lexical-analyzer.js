@@ -26,10 +26,6 @@ class LexicalAnalyzer {
             <div class="space-y-4">
                 <h3 class="text-xl font-bold text-white mb-4">🔍 Lexical Analysis Result</h3>
                 <div class="flex flex-wrap gap-3" id="tokensContainer"></div>
-                <div class="mt-6">
-                    <h4 class="text-lg font-semibold text-white mb-3">📊 Token Summary</h4>
-                    <div id="tokenSummary" class="grid grid-cols-2 md:grid-cols-4 gap-4"></div>
-                </div>
             </div>
         `;
         
@@ -40,7 +36,7 @@ class LexicalAnalyzer {
             const category = this.getTokenCategory(token.type);
             const categoryColor = this.getCategoryColor(category);
             
-            tokenElement.className = `flex flex-col items-center px-4 py-3 rounded-xl font-mono text-sm cursor-pointer hover:scale-110 hover:shadow-lg transition-all duration-300 ${categoryColor}`;
+            tokenElement.className = `flex flex-col items-center justify-center w-24 h-20 rounded-xl font-mono text-sm cursor-pointer hover:scale-110 hover:shadow-lg transition-all duration-300 ${categoryColor}`;
             const displayValue = this.getDisplayValue(token.value, category);
             tokenElement.innerHTML = `
                 <span class="text-xs opacity-80 mb-1">${category}</span>
@@ -53,7 +49,6 @@ class LexicalAnalyzer {
             container.appendChild(tokenElement);
         });
         
-        this.renderTokenSummary(tokens);
         this.animateTokens(tokens);
     }
 
@@ -109,26 +104,6 @@ class LexicalAnalyzer {
         return value;
     }
 
-    renderTokenSummary(tokens) {
-        const summary = {};
-        tokens.forEach(token => {
-            const category = this.getTokenCategory(token.type);
-            summary[category] = (summary[category] || 0) + 1;
-        });
-        
-        const summaryContainer = document.getElementById('tokenSummary');
-        Object.entries(summary).forEach(([category, count]) => {
-            const summaryElement = document.createElement('div');
-            const categoryColor = this.getCategoryColor(category);
-            summaryElement.className = `text-center p-3 rounded-lg ${categoryColor}`;
-            summaryElement.innerHTML = `
-                <div class="text-2xl font-bold">${count}</div>
-                <div class="text-sm opacity-80">${category}${count > 1 ? 's' : ''}</div>
-            `;
-            summaryContainer.appendChild(summaryElement);
-        });
-    }
-
     animateTokens(tokens) {
         const tl = gsap.timeline();
         
@@ -141,14 +116,5 @@ class LexicalAnalyzer {
                 ease: "back.out(1.7)"
             }, index * 0.15);
         });
-        
-        // Animate summary after tokens
-        tl.from('#tokenSummary > div', {
-            opacity: 0,
-            y: 20,
-            duration: 0.4,
-            stagger: 0.1,
-            ease: "power2.out"
-        }, "-=0.3");
     }
 }
