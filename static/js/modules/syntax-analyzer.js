@@ -35,11 +35,13 @@ class SyntaxAnalyzer {
     }
 
     renderD3Tree(astData) {
+        console.log('🌳 Rendering HORIZONTAL AST Tree');
         const container = d3.select('#d3TreeContainer');
         container.selectAll('*').remove();
         
         const isMobile = window.innerWidth < 768;
         const isSmallMobile = window.innerWidth < 480;
+        console.log('📱 Device:', isSmallMobile ? 'Small Mobile' : isMobile ? 'Mobile' : 'Desktop');
         
         const nodeCount = this.countNodes(astData);
         
@@ -48,6 +50,7 @@ class SyntaxAnalyzer {
         const NODE_HEIGHT = isSmallMobile ? 80 : isMobile ? 100 : 120;
         const HORIZONTAL_SPACING = isSmallMobile ? 300 : isMobile ? 400 : 500;
         const VERTICAL_SPACING = isSmallMobile ? 150 : isMobile ? 200 : 250;
+        console.log('📏 Node Size:', NODE_WIDTH, 'x', NODE_HEIGHT);
         
         // Calculate canvas size - wide but not too deep
         const canvasWidth = Math.max(1500, nodeCount * HORIZONTAL_SPACING);
@@ -55,6 +58,7 @@ class SyntaxAnalyzer {
         
         const dynamicWidth = canvasWidth;
         const dynamicHeight = canvasHeight;
+        console.log('🖼️ Canvas Size:', dynamicWidth, 'x', dynamicHeight, '| Nodes:', nodeCount);
         
         const svg = container.append('svg')
             .attr('width', '100%')
@@ -128,7 +132,10 @@ class SyntaxAnalyzer {
             .data(root.descendants())
             .enter().append('g')
             .attr('class', 'node')
-            .attr('transform', d => `translate(${d.y}, ${d.x})`)  // Swap for horizontal
+            .attr('transform', d => {
+                console.log('🔄 Node position (horizontal):', d.y, d.x);
+                return `translate(${d.y}, ${d.x})`;
+            })  // Swap for horizontal
             .style('opacity', 0);
         
         nodes.append('rect')
