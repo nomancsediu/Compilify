@@ -42,8 +42,9 @@ class SyntaxAnalyzer {
         const isMobile = window.innerWidth < 768;
         const isSmallMobile = window.innerWidth < 480;
         
-        const baseWidth = isSmallMobile ? 1800 : isMobile ? 2400 : 3000;
-        const baseHeight = isSmallMobile ? 1200 : isMobile ? 1600 : 2000;
+        // Much larger base dimensions for desktop
+        const baseWidth = isSmallMobile ? 1800 : isMobile ? 2400 : 5000;
+        const baseHeight = isSmallMobile ? 1200 : isMobile ? 1600 : 3000;
         
         const width = Math.max(containerRect.width || baseWidth, baseWidth);
         const height = Math.max(containerRect.height || baseHeight, baseHeight);
@@ -51,11 +52,14 @@ class SyntaxAnalyzer {
         const nodeCount = this.countNodes(astData);
         const treeDepth = this.getTreeDepth(astData);
         
-        const nodeSpacing = isSmallMobile ? 500 : isMobile ? 600 : 700;
-        const levelSpacing = isSmallMobile ? 300 : isMobile ? 350 : 400;
+        // Increased spacing for better visibility on desktop
+        const nodeSpacing = isSmallMobile ? 500 : isMobile ? 600 : 1000;
+        const levelSpacing = isSmallMobile ? 300 : isMobile ? 350 : 500;
         
-        const dynamicWidth = Math.max(width, nodeCount * nodeSpacing);
-        const dynamicHeight = Math.max(height, treeDepth * levelSpacing);
+        // Dynamic sizing based on expression complexity
+        const complexityFactor = nodeCount > 10 ? 1.5 : 1;
+        const dynamicWidth = Math.max(width, nodeCount * nodeSpacing * complexityFactor);
+        const dynamicHeight = Math.max(height, treeDepth * levelSpacing * complexityFactor);
         
         const svg = container.append('svg')
             .attr('width', '100%')
@@ -97,17 +101,18 @@ class SyntaxAnalyzer {
         
         const root = d3.hierarchy(astData);
         
-        const margin = isSmallMobile ? 80 : isMobile ? 100 : 150;
+        const margin = isSmallMobile ? 80 : isMobile ? 100 : 200;
         const treeLayout = d3.tree()
             .size([dynamicWidth - margin * 2, dynamicHeight - margin])
             .separation((a, b) => {
                 const aWidth = this.getNodeWidth(a.data, isMobile, isSmallMobile);
                 const bWidth = this.getNodeWidth(b.data, isMobile, isSmallMobile);
-                const minSeparation = (aWidth + bWidth) / 2 + (isSmallMobile ? 60 : isMobile ? 80 : 100);
-                const scaleFactor = isSmallMobile ? 120 : isMobile ? 150 : 180;
+                // Increased separation for desktop
+                const minSeparation = (aWidth + bWidth) / 2 + (isSmallMobile ? 60 : isMobile ? 80 : 150);
+                const scaleFactor = isSmallMobile ? 120 : isMobile ? 150 : 250;
                 return a.parent === b.parent ? 
                     Math.max(2, minSeparation / scaleFactor) : 
-                    Math.max(3, minSeparation / (scaleFactor * 0.8));
+                    Math.max(3, minSeparation / (scaleFactor * 0.7));
             });
         
         treeLayout(root);
@@ -136,8 +141,9 @@ class SyntaxAnalyzer {
             .attr('transform', d => `translate(${d.x}, ${d.y})`)
             .style('opacity', 0);
         
-        const nodeHeight = isSmallMobile ? 120 : isMobile ? 140 : 160;
-        const borderRadius = isSmallMobile ? 25 : 30;
+        // Larger nodes for desktop
+        const nodeHeight = isSmallMobile ? 120 : isMobile ? 140 : 200;
+        const borderRadius = isSmallMobile ? 25 : isMobile ? 30 : 35;
         
         nodes.append('rect')
             .attr('width', d => this.getNodeWidth(d.data, isMobile, isSmallMobile))
@@ -151,7 +157,8 @@ class SyntaxAnalyzer {
             .style('stroke-width', 3)
             .style('filter', 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))');
         
-        const fontSize = isSmallMobile ? '32px' : isMobile ? '36px' : '40px';
+        // Larger font for desktop
+        const fontSize = isSmallMobile ? '32px' : isMobile ? '36px' : '48px';
         
         nodes.append('text')
             .attr('dy', 3)
@@ -196,10 +203,11 @@ class SyntaxAnalyzer {
     
     getNodeWidth(node, isMobile = false, isSmallMobile = false) {
         const text = this.getNodeText(node, isMobile, isSmallMobile);
-        const charWidth = isSmallMobile ? 30 : isMobile ? 35 : 40;
-        const padding = isSmallMobile ? 80 : isMobile ? 100 : 120;
-        const minWidth = isSmallMobile ? 300 : isMobile ? 350 : 400;
-        const maxWidth = isSmallMobile ? 600 : isMobile ? 700 : 800;
+        // Increased dimensions for desktop
+        const charWidth = isSmallMobile ? 30 : isMobile ? 35 : 50;
+        const padding = isSmallMobile ? 80 : isMobile ? 100 : 150;
+        const minWidth = isSmallMobile ? 300 : isMobile ? 350 : 500;
+        const maxWidth = isSmallMobile ? 600 : isMobile ? 700 : 1000;
         return Math.max(minWidth, Math.min(maxWidth, text.length * charWidth + padding));
     }
     
