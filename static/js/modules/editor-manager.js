@@ -8,7 +8,7 @@ class EditorManager {
             require.config({ paths: { vs: 'https://cdn.jsdelivr.net/npm/monaco-editor@0.44.0/min/vs' } });
             require(['vs/editor/editor.main'], () => {
                 this.editor = monaco.editor.create(document.getElementById('codeEditor'), {
-                    value: 'b = a*(c+d)/2 + (c+d)*3 - 4*2 + x*1 + y - y/1;',
+                    value: '',
                     language: 'c',
                     theme: 'vs-dark',
                     fontSize: 14,
