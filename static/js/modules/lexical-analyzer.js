@@ -25,11 +25,11 @@ class LexicalAnalyzer {
         this.visualizationContent.innerHTML = `
             <div class="space-y-6">
                 <div>
-                    <h3 class="text-xl font-bold text-white mb-4">🔍 Lexical Analysis Result</h3>
-                    <div class="flex flex-wrap gap-3" id="tokensContainer"></div>
+                    <h3 class="text-xl font-bold text-white mb-4">Lexical Analysis Result</h3>
+                    <div class="grid grid-cols-6 gap-3" id="tokensContainer"></div>
                 </div>
                 <div>
-                    <h3 class="text-xl font-bold text-white mb-4">📊 Symbol Table</h3>
+                    <h3 class="text-xl font-bold text-white mb-4">Symbol Table</h3>
                     <div class="overflow-x-auto">
                         <table class="w-full bg-gray-800/50 rounded-lg border border-gray-600">
                             <thead>
