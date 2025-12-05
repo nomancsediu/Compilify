@@ -1,6 +1,17 @@
+# Core Django Framework
 Django==4.2.7
+
+# REST API Framework
 djangorestframework==3.14.0
+
+# CORS handling for API requests
 django-cors-headers==4.3.1
+
+# Production WSGI server
 gunicorn==21.2.0
+
+# Environment variable management
 python-dotenv==1.0.0
+
+# Static file serving in production
 whitenoise==6.6.0

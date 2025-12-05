@@ -1,3 +1,13 @@
+/**
+ * Lexical Analyzer Frontend Module
+ * 
+ * Handles lexical analysis visualization and user interface interactions.
+ * Communicates with the backend API to perform tokenization and displays
+ * results in an interactive format.
+ * 
+ * @author Compilify Team
+ * @version 1.0.0
+ */
 class LexicalAnalyzer {
     constructor(visualizationContent) {
         this.visualizationContent = visualizationContent;
@@ -29,7 +39,7 @@ class LexicalAnalyzer {
                     <div class="grid grid-cols-6 gap-3" id="tokensContainer"></div>
                 </div>
                 <div>
-                    <h3 class="text-xl font-bold text-white mb-4">📋 Token Table</h3>
+                    <h3 class="text-xl font-bold text-white mb-4">Token Table</h3>
                     <div class="overflow-x-auto">
                         <table class="w-full bg-gray-800/50 rounded-lg border border-gray-600">
                             <thead>
@@ -45,14 +55,13 @@ class LexicalAnalyzer {
                     </div>
                 </div>
                 <div>
-                    <h3 class="text-xl font-bold text-white mb-4">📊 Symbol Table</h3>
+                    <h3 class="text-xl font-bold text-white mb-4">Symbol Table</h3>
                     <div class="overflow-x-auto">
-                        <table class="w-full bg-gray-800/50 rounded-lg border border-gray-600">
+                        <table class="w-full bg-gray-800/50 rounded-lg border border-gray-600 table-fixed">
                             <thead>
                                 <tr class="bg-gray-700/50">
-                                    <th class="px-4 py-3 text-left text-sm font-semibold text-gray-200 border-b border-gray-600">Symbol</th>
-                                    <th class="px-4 py-3 text-left text-sm font-semibold text-gray-200 border-b border-gray-600">Type</th>
-                                    <th class="px-4 py-3 text-left text-sm font-semibold text-gray-200 border-b border-gray-600">Value</th>
+                                    <th class="w-1/2 px-4 py-3 text-left text-sm font-semibold text-gray-200 border-b border-gray-600">Symbol</th>
+                                    <th class="w-1/2 px-4 py-3 text-center text-sm font-semibold text-gray-200 border-b border-gray-600">Type</th>
                                 </tr>
                             </thead>
                             <tbody id="symbolTableBody">
@@ -112,12 +121,11 @@ class LexicalAnalyzer {
             symbolRow.className = 'border-b border-gray-700/50 hover:bg-gray-700/30 transition-colors';
             symbolRow.innerHTML = `
                 <td class="px-4 py-3 text-sm font-mono text-gray-300">${symbol}</td>
-                <td class="px-4 py-3 text-sm text-gray-300">
+                <td class="px-4 py-3 text-sm text-gray-300 text-center">
                     <span class="inline-block px-2 py-1 rounded text-xs bg-blue-600/30 text-blue-300">
                         Variable
                     </span>
                 </td>
-                <td class="px-4 py-3 text-sm text-gray-400 italic">undefined</td>
             `;
             symbolTableBody.appendChild(symbolRow);
         });

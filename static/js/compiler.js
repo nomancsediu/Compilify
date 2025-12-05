@@ -44,6 +44,8 @@ class CompilerVisualizer {
             this.uiManager.showError(error.message);
         }
     }
+    
+
 }
 
 // Initialize the visualizer when the page loads

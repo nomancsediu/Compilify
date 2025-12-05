@@ -27,8 +27,7 @@ class UIManager {
     }
 
     setupPhaseButtons(callback) {
-        // No phase buttons needed - only lexical analysis
-        // Auto-trigger lexical analysis
+        // Only lexical analysis
         callback('lexical');
     }
 }
