@@ -100,15 +100,7 @@ class CompilerVisualizer {
                 case 'semantic':
                     await this.showSemanticAnalysis(code);
                     break;
-                case 'intermediate':
-                    await this.showIntermediateGeneration(code);
-                    break;
-                case 'optimize':
-                    await this.showOptimization(code);
-                    break;
-                case 'codegen':
-                    await this.showCodeGeneration(code);
-                    break;
+
             }
         } catch (error) {
             this.showError(error.message);
@@ -151,18 +143,7 @@ class CompilerVisualizer {
         }
     }
     
-    async showOutput(code) {
-        const response = await fetch('/api/evaluate/', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ code })
-        });
-        
-        const data = await response.json();
-        this.renderOutput(data);
-    }
+
     
     async showSemanticAnalysis(code) {
         try {
@@ -188,65 +169,11 @@ class CompilerVisualizer {
         }
     }
     
-    async showIntermediateGeneration(code) {
-        const response = await fetch('/api/intermediate/', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ code })
-        });
-        
-        const data = await response.json();
-        
-        if (data.success) {
-            this.renderIntermediateCode(data);
-        } else {
-            this.showError(data.error);
-        }
-    }
+
     
-    async showOptimization(code) {
-        try {
-            const response = await fetch('/api/optimize/', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ code })
-            });
-            
-            const data = await response.json();
-            console.log('Optimization API response:', data); // Debug log
-            
-            if (data.success !== false) {
-                this.renderOptimization(data);
-            } else {
-                this.showError(data.error || 'Code optimization failed');
-            }
-        } catch (error) {
-            console.error('Optimization error:', error);
-            this.showError('Failed to optimize code: ' + error.message);
-        }
-    }
+
     
-    async showCodeGeneration(code) {
-        const response = await fetch('/api/codegen/', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ code, target: '8086' })
-        });
-        
-        const data = await response.json();
-        
-        if (data.success) {
-            this.renderAssemblyCode(data);
-        } else {
-            this.showError(data.error);
-        }
-    }
+
     
     renderTokens(tokens, symbolTable) {
         const tokenColors = {
@@ -854,75 +781,7 @@ class CompilerVisualizer {
         });
     }
     
-    renderOutput(data) {
-        this.visualizationContent.innerHTML = `
-            <div class="flex flex-col gap-4">
-                <h3 class="text-lg font-bold text-zinc-100">Output</h3>
-                <div class="rounded-lg border border-white/10 p-4">
-                    <div id="outputContainer"></div>
-                </div>
-            </div>
-        `;
-        
-        const container = document.getElementById('outputContainer');
-        
-        if (data.success) {
-            container.innerHTML = `
-                <div id="outputResult" class="text-green-300 text-lg font-mono">
-                    Result: ${data.result}
-                </div>
-                ${Object.keys(data.variables).length > 0 ? `
-                    <div id="variablesSection" class="mt-4 text-zinc-300">
-                        <h4 class="font-bold mb-2">Variables:</h4>
-                        <div id="variablesList">
-                            ${Object.entries(data.variables).map(([key, value], index) => 
-                                `<div id="var-${index}" class="font-mono py-1 px-2 rounded bg-green-500/10 mb-1">${key} = ${value}</div>`
-                            ).join('')}
-                        </div>
-                    </div>
-                ` : ''}
-            `;
-            
-            // Animate output
-            const tl = gsap.timeline();
-            tl.from('#outputResult', {
-                scale: 0,
-                rotation: 360,
-                duration: 0.8,
-                ease: "back.out(1.7)"
-            });
-            
-            if (Object.keys(data.variables).length > 0) {
-                tl.from('#variablesSection', {
-                    y: 30,
-                    opacity: 0,
-                    duration: 0.5
-                }, 0.5);
-                
-                Object.keys(data.variables).forEach((_, index) => {
-                    tl.from(`#var-${index}`, {
-                        x: -50,
-                        opacity: 0,
-                        duration: 0.3,
-                        ease: "power2.out"
-                    }, 0.8 + index * 0.1);
-                });
-            }
-        } else {
-            container.innerHTML = `
-                <div id="errorResult" class="text-red-300 text-lg font-mono">
-                    Error: ${data.error}
-                </div>
-            `;
-            
-            gsap.from('#errorResult', {
-                scale: 0,
-                rotation: -10,
-                duration: 0.6,
-                ease: "back.out(1.7)"
-            });
-        }
-    }
+
     
     renderSemanticAnalysis(data) {
         console.log('Semantic data:', data); // Debug log
@@ -1060,149 +919,13 @@ class CompilerVisualizer {
         }
     }
     
-    renderIntermediateCode(data) {
-        this.visualizationContent.innerHTML = `
-            <div class="flex flex-col gap-4">
-                <h3 class="text-xl font-semibold tracking-tight text-white">Intermediate Code (Three-Address Code)</h3>
-                <div class="font-mono text-sm text-zinc-300">
-                    ${data.instructions.map((instr, index) => 
-                        `<div id="instr-${index}" class="py-1 hover:bg-white/5 px-2 rounded mb-1 border-l-2 border-vibrant-blue/30">${instr}</div>`
-                    ).join('')}
-                </div>
-            </div>
-        `;
-        
-        // Animate instructions
-        this.animateInstructions(data.instructions);
-    }
+
     
-    animateInstructions(instructions, prefix = 'instr') {
-        const tl = gsap.timeline();
-        
-        instructions.forEach((_, index) => {
-            tl.from(`#${prefix}-${index}`, {
-                x: -100,
-                opacity: 0,
-                duration: 0.4,
-                ease: "power2.out"
-            }, index * 0.1)
-            .to(`#${prefix}-${index}`, {
-                borderLeftColor: '#3B82F6',
-                duration: 0.2
-            }, index * 0.1 + 0.2);
-        });
-        
-        // Add hover effects
-        instructions.forEach((_, index) => {
-            const element = document.getElementById(`${prefix}-${index}`);
-            if (element) {
-                element.addEventListener('mouseenter', () => {
-                    gsap.to(element, {
-                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                        scale: 1.02,
-                        duration: 0.2
-                    });
-                });
-                element.addEventListener('mouseleave', () => {
-                    gsap.to(element, {
-                        backgroundColor: 'transparent',
-                        scale: 1,
-                        duration: 0.2
-                    });
-                });
-            }
-        });
-    }
+
     
-    renderOptimization(data) {
-        const hasOptimizations = data.optimizations_applied && data.optimizations_applied.length > 0;
-        const reductionPercent = data.stats ? Math.round((data.stats.reduction / data.stats.original_instructions) * 100) : 0;
-        
-        this.visualizationContent.innerHTML = `
-            <div class="flex flex-col gap-4">
-                <div class="flex items-center justify-between">
-                    <h3 class="text-xl font-semibold tracking-tight text-white">Code Optimization</h3>
-                    ${data.stats ? `
-                        <div class="flex items-center gap-2 text-sm">
-                            <span class="px-2 py-1 rounded bg-blue-500/20 text-blue-300">${data.stats.original_instructions} → ${data.stats.optimized_instructions}</span>
-                            ${data.stats.reduction > 0 ? 
-                                `<span class="px-2 py-1 rounded bg-green-500/20 text-green-300">-${reductionPercent}%</span>` :
-                                `<span class="px-2 py-1 rounded bg-gray-500/20 text-gray-300">No reduction</span>`
-                            }
-                        </div>
-                    ` : ''}
-                </div>
-                
-                ${hasOptimizations ? `
-                    <div class="bg-green-900/20 border border-green-500/30 rounded-lg p-3 mb-4">
-                        <h4 class="font-bold text-green-300 mb-2">Optimizations Applied:</h4>
-                        <div class="space-y-1">
-                            ${data.optimizations_applied.map((opt, index) => 
-                                `<div id="optimization-${index}" class="text-sm text-green-200 pl-2">• ${opt}</div>`
-                            ).join('')}
-                        </div>
-                    </div>
-                ` : `
-                    <div class="bg-yellow-900/20 border border-yellow-500/30 rounded-lg p-3 mb-4">
-                        <div class="text-yellow-300 font-semibold">No optimizations applied</div>
-                        <div class="text-yellow-200 text-sm mt-1">Code is already optimal or no optimization opportunities found</div>
-                    </div>
-                `}
-                
-                <div class="rounded-lg border border-white/10 p-4 bg-gradient-to-br from-slate-900/50 to-slate-800/30">
-                    <h4 class="font-bold text-zinc-200 mb-3">Optimized Three-Address Code</h4>
-                    <div class="font-mono text-sm text-zinc-300">
-                        ${data.formatted_instructions && data.formatted_instructions.length > 0 ? 
-                            data.formatted_instructions.map((instr, index) => 
-                                `<div id="opt-instr-${index}" class="py-1 hover:bg-white/5 px-2 rounded mb-1 border-l-2 border-green-500/30 transition-colors">${instr}</div>`
-                            ).join('') :
-                            '<div class="text-center py-8 text-gray-400">No optimized code generated</div>'
-                        }
-                    </div>
-                </div>
-            </div>
-        `;
-        
-        // Animate optimizations
-        if (hasOptimizations) {
-            data.optimizations_applied.forEach((_, index) => {
-                gsap.from(`#optimization-${index}`, {
-                    x: -20,
-                    opacity: 0,
-                    duration: 0.3,
-                    delay: index * 0.1
-                });
-            });
-        }
-        
-        // Animate instructions
-        if (data.formatted_instructions && data.formatted_instructions.length > 0) {
-            this.animateInstructions(data.formatted_instructions, 'opt-instr');
-        }
-    }
+
     
-    renderAssemblyCode(data) {
-        this.visualizationContent.innerHTML = `
-            <div class="flex flex-col gap-4">
-                <h3 class="text-lg font-bold text-zinc-100">Assembly Code (${data.target_architecture.toUpperCase()})</h3>
-                <div class="rounded-lg border border-white/10 p-4 overflow-auto">
-                    <div class="font-mono text-sm text-zinc-300">
-                        ${data.assembly_code.map(line => 
-                            `<div class="py-1 hover:bg-white/5 px-2 rounded">${line}</div>`
-                        ).join('')}
-                    </div>
-                </div>
-                <div class="rounded-lg border border-white/10 p-4">
-                    <h4 class="font-bold text-zinc-200 mb-2">Register Allocation</h4>
-                    <div class="text-zinc-300 text-sm">
-                        ${Object.entries(data.register_usage).map(([var_, reg]) => 
-                            `<span class="inline-block bg-blue-500/20 text-blue-300 px-2 py-1 rounded mr-2 mb-1">${var_} → ${reg}</span>`
-                        ).join('')}
-                    </div>
-                </div>
-            </div>
-        `;
-    }
+
     
     showEmptyState() {
         this.visualizationContent.innerHTML = `
