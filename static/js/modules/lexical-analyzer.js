@@ -29,7 +29,7 @@ class LexicalAnalyzer {
                     <div class="grid grid-cols-6 gap-3" id="tokensContainer"></div>
                 </div>
                 <div>
-                    <h3 class="text-xl font-bold text-white mb-4">Symbol Table</h3>
+                    <h3 class="text-xl font-bold text-white mb-4">📋 Token Table</h3>
                     <div class="overflow-x-auto">
                         <table class="w-full bg-gray-800/50 rounded-lg border border-gray-600">
                             <thead>
@@ -37,6 +37,22 @@ class LexicalAnalyzer {
                                     <th class="px-4 py-3 text-left text-sm font-semibold text-gray-200 border-b border-gray-600">Lexeme</th>
                                     <th class="px-4 py-3 text-left text-sm font-semibold text-gray-200 border-b border-gray-600">Token Type</th>
                                     <th class="px-4 py-3 text-left text-sm font-semibold text-gray-200 border-b border-gray-600">Category</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tokenTableBody">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div>
+                    <h3 class="text-xl font-bold text-white mb-4">📊 Symbol Table</h3>
+                    <div class="overflow-x-auto">
+                        <table class="w-full bg-gray-800/50 rounded-lg border border-gray-600">
+                            <thead>
+                                <tr class="bg-gray-700/50">
+                                    <th class="px-4 py-3 text-left text-sm font-semibold text-gray-200 border-b border-gray-600">Symbol</th>
+                                    <th class="px-4 py-3 text-left text-sm font-semibold text-gray-200 border-b border-gray-600">Type</th>
+                                    <th class="px-4 py-3 text-left text-sm font-semibold text-gray-200 border-b border-gray-600">Value</th>
                                 </tr>
                             </thead>
                             <tbody id="symbolTableBody">
@@ -48,7 +64,10 @@ class LexicalAnalyzer {
         `;
         
         const container = document.getElementById('tokensContainer');
+        const tokenTableBody = document.getElementById('tokenTableBody');
         const symbolTableBody = document.getElementById('symbolTableBody');
+        
+        const symbols = new Set();
         
         tokens.forEach((token, index) => {
             const tokenElement = document.createElement('div');
@@ -67,10 +86,10 @@ class LexicalAnalyzer {
             gsap.set(tokenElement, { opacity: 0, scale: 0.5, y: 20 });
             container.appendChild(tokenElement);
             
-            // Add row to symbol table
-            const row = document.createElement('tr');
-            row.className = 'border-b border-gray-700/50 hover:bg-gray-700/30 transition-colors';
-            row.innerHTML = `
+            // Add row to token table
+            const tokenRow = document.createElement('tr');
+            tokenRow.className = 'border-b border-gray-700/50 hover:bg-gray-700/30 transition-colors';
+            tokenRow.innerHTML = `
                 <td class="px-4 py-3 text-sm font-mono text-gray-300">${token.value}</td>
                 <td class="px-4 py-3 text-sm font-mono text-gray-300">${token.type}</td>
                 <td class="px-4 py-3 text-sm text-gray-300">
@@ -79,7 +98,28 @@ class LexicalAnalyzer {
                     </span>
                 </td>
             `;
-            symbolTableBody.appendChild(row);
+            tokenTableBody.appendChild(tokenRow);
+            
+            // Collect unique identifiers for symbol table
+            if (token.type === 'IDENTIFIER') {
+                symbols.add(token.value);
+            }
+        });
+        
+        // Populate symbol table with unique identifiers
+        symbols.forEach(symbol => {
+            const symbolRow = document.createElement('tr');
+            symbolRow.className = 'border-b border-gray-700/50 hover:bg-gray-700/30 transition-colors';
+            symbolRow.innerHTML = `
+                <td class="px-4 py-3 text-sm font-mono text-gray-300">${symbol}</td>
+                <td class="px-4 py-3 text-sm text-gray-300">
+                    <span class="inline-block px-2 py-1 rounded text-xs bg-blue-600/30 text-blue-300">
+                        Variable
+                    </span>
+                </td>
+                <td class="px-4 py-3 text-sm text-gray-400 italic">undefined</td>
+            `;
+            symbolTableBody.appendChild(symbolRow);
         });
         
         this.animateTokens(tokens);
@@ -163,6 +203,15 @@ class LexicalAnalyzer {
             }, index * 0.15);
         });
         
+        // Animate token table rows
+        tl.from('#tokenTableBody tr', {
+            opacity: 0,
+            x: -20,
+            duration: 0.3,
+            stagger: 0.05,
+            ease: "power2.out"
+        }, "-=0.5");
+        
         // Animate symbol table rows
         tl.from('#symbolTableBody tr', {
             opacity: 0,
@@ -170,6 +219,6 @@ class LexicalAnalyzer {
             duration: 0.3,
             stagger: 0.05,
             ease: "power2.out"
-        }, "-=0.5");
+        }, "-=0.3");
     }
 }
